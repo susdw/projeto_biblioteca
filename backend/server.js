@@ -1,14 +1,17 @@
 const express = require("express");
 const cors = require("cors");
-const routes = require("./routes");
-const userRoutes = require('./routes/userRoutes');
+
+const productRoutes = require("./routes/productRoutes");
+const userRoutes = require("./routes/userRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(routes);
 
-// Rotas de usuários e compras
-app.use('/api', userRoutes);
+// Agrupando as rotas
+app.use("/api/products", productRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/orders", orderRoutes);
 
-app.listen(3000, () => console.log("Servidor rodando na porta 3000"));
+app.listen(3000, () => console.log("🔥 Servidor rodando em http://localhost:3000"));
