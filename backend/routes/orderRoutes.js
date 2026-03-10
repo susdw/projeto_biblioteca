@@ -6,20 +6,24 @@ router.post("/pedidos", async (req, res) => {
     const { idClientes, valor_total, itens, tipo_pagamento } = req.body;
     try {
         const [resPedido] = await db.query(
-            "INSERT INTO pedidos (valor_total, status, data_pedido, Clientes_idClientes) VALUES (?, 'Processando', NOW(), ?)",
+            "INSERT INTO orders (total_value, status, ordered_at, customer_id) VALUES (?, 'processing', NOW(), ?)",
             [valor_total, idClientes]
         );
+
         const idPedido = resPedido.insertId;
+
         for (let item of itens) {
             await db.query(
-                "INSERT INTO `Itens pedidos` (quantidade, preco_unitario, Produtos_idProdutos, pedidos_idpedidos) VALUES (?, ?, ?, ?)",
+                "INSERT INTO order_items (quantity, unit_price, product_id, order_id) VALUES (?, ?, ?, ?)",
                 [item.quantidade, item.preco, item.idProduto, idPedido]
             );
         }
+
         await db.query(
-            "INSERT INTO pagamentos (tipo, status, pedidos_idpedidos) VALUES (?, 'Pendente', ?)",
+            "INSERT INTO payments (method, status, order_id) VALUES (?, 'pending', ?)",
             [tipo_pagamento, idPedido]
         );
+
         res.json({ msg: "Pedido e Pagamento registrados!", idPedido });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -29,7 +33,7 @@ router.post("/pedidos", async (req, res) => {
 router.get("/pedidos/cliente/:id", async (req, res) => {
     try {
         const [pedidos] = await db.query(
-            "SELECT * FROM pedidos WHERE Clientes_idClientes = ?", 
+            "SELECT * FROM orders WHERE customer_id = ?",
             [req.params.id]
         );
         res.json(pedidos);
@@ -42,7 +46,7 @@ router.put("/pedidos/:id/status", async (req, res) => {
     const { status } = req.body;
     try {
         await db.query(
-            "UPDATE pedidos SET status = ? WHERE idpedidos = ?",
+            "UPDATE orders SET status = ? WHERE id = ?",
             [status, req.params.id]
         );
         res.json({ msg: "Status do pedido atualizado!" });
@@ -51,24 +55,11 @@ router.put("/pedidos/:id/status", async (req, res) => {
     }
 });
 
-router.put("/pagamentos/pedido/:idPedido", async (req, res) => {
-    const { status_pagamento } = req.body;
-    try {
-        await db.query(
-            "UPDATE pagamentos SET status = ? WHERE pedidos_idpedidos = ?",
-            [status_pagamento, req.params.idPedido]
-        );
-        res.json({ msg: "Status do pagamento atualizado!" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 router.delete("/pedidos/:id", async (req, res) => {
     try {
-        await db.query("DELETE FROM pagamentos WHERE pedidos_idpedidos = ?", [req.params.id]);
-        await db.query("DELETE FROM `Itens pedidos` WHERE pedidos_idpedidos = ?", [req.params.id]);
-        await db.query("DELETE FROM pedidos WHERE idpedidos = ?", [req.params.id]);
+        await db.query("DELETE FROM payments WHERE order_id = ?", [req.params.id]);
+        await db.query("DELETE FROM order_items WHERE order_id = ?", [req.params.id]);
+        await db.query("DELETE FROM orders WHERE id = ?", [req.params.id]);
         res.json({ msg: "Pedido e dados relacionados excluídos!" });
     } catch (error) {
         res.status(500).json({ error: error.message });

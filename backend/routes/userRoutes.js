@@ -6,12 +6,13 @@ router.post("/clientes", async (req, res) => {
     const { nome, email, telefone, endereco } = req.body;
     try {
         const [resAddr] = await db.query(
-            "INSERT INTO endereco (cep, bairro, cidade, estado, numero, rua) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO addresses (zip_code, neighborhood, city, state, number, street) VALUES (?, ?, ?, ?, ?, ?)",
             [endereco.cep, endereco.bairro, endereco.cidade, endereco.estado, endereco.numero, endereco.rua]
         );
         const idEndereco = resAddr.insertId;
+
         await db.query(
-            "INSERT INTO Clientes (nome, email, telefone, endereco_idendereco) VALUES (?, ?, ?, ?)",
+            "INSERT INTO customers (name, email, phone, address_id) VALUES (?, ?, ?, ?)",
             [nome, email, telefone, idEndereco]
         );
         res.json({ msg: "Cliente e endereço cadastrados!" });
@@ -23,9 +24,9 @@ router.post("/clientes", async (req, res) => {
 router.get("/clientes", async (req, res) => {
     try {
         const [clientes] = await db.query(`
-            SELECT c.*, e.rua, e.cidade 
-            FROM Clientes c 
-            JOIN endereco e ON c.endereco_idendereco = e.idendereco`);
+            SELECT c.*, a.street, a.city
+            FROM customers c
+            JOIN addresses a ON c.address_id = a.id`);
         res.json(clientes);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -36,7 +37,7 @@ router.put("/clientes/:id", async (req, res) => {
     const { email, telefone } = req.body;
     try {
         await db.query(
-            "UPDATE Clientes SET email = ?, telefone = ? WHERE idClientes = ?",
+            "UPDATE customers SET email = ?, phone = ? WHERE id = ?",
             [email, telefone, req.params.id]
         );
         res.json({ msg: "Dados atualizados!" });
@@ -47,11 +48,14 @@ router.put("/clientes/:id", async (req, res) => {
 
 router.delete("/clientes/:id", async (req, res) => {
     try {
-        const [cliente] = await db.query("SELECT endereco_idendereco FROM Clientes WHERE idClientes = ?", [req.params.id]);
+        const [cliente] = await db.query(
+            "SELECT address_id FROM customers WHERE id = ?",
+            [req.params.id]
+        );
         if (cliente.length > 0) {
-            const idEndereco = cliente[0].endereco_idendereco;
-            await db.query("DELETE FROM Clientes WHERE idClientes = ?", [req.params.id]);
-            await db.query("DELETE FROM endereco WHERE idendereco = ?", [idEndereco]);
+            const idEndereco = cliente[0].address_id;
+            await db.query("DELETE FROM customers WHERE id = ?", [req.params.id]);
+            await db.query("DELETE FROM addresses WHERE id = ?", [idEndereco]);
             res.json({ msg: "Cliente e endereço removidos!" });
         } else {
             res.status(404).json({ error: "Cliente não encontrado" });
