@@ -11,11 +11,11 @@ app.use(cors());
 app.use(express.json());
 
 // exemplo de uso desse middlewrea: GET http://localhost:3000/uploads/covers/cover.jpg
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// Routes
+// rotas
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
 
-app.listen(3000, () => console.log("🔥 Servidor rodando em http://localhost:3000"));
+app.listen(3000, () => console.log("Servidor rodando em http://localhost:3000"));

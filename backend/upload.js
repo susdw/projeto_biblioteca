@@ -13,8 +13,6 @@ const storage = multer.diskStorage({
         cb(null, UPLOAD_DIR);
     },
     filename: (req, file, cb) => {
-        // Format: cover-{productId}-{timestamp}.ext
-        // productId comes from the route param (:id)
         const ext = path.extname(file.originalname).toLowerCase();
         const filename = `cover-${req.params.id}-${Date.now()}${ext}`;
         cb(null, filename);
@@ -33,7 +31,7 @@ const fileFilter = (_req, file, cb) => {
 const upload = multer({
     storage,
     fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
+    limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 module.exports = upload;
