@@ -1,0 +1,27 @@
+body{
+background:#f4e7d3;
+}
+
+.navbar{
+background:#4b2e1e;
+}
+
+.hero{
+background:#6b4f3b;
+color:white;
+padding:100px;
+}
+
+.btn-warning{
+background:#c89b3c;
+border:none;
+}
+
+.hero{
+background-image: url("../img/biblioteca-banner.png");
+background-size: cover;
+background-position: center;
+color: white;
+padding: 120px;
+text-shadow: 2px 2px 5px black;
+}
