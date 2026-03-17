@@ -1,80 +1,121 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
-
-<title>Lista de Livros</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo de Livros</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body {
+  background: url('https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;
+  min-height:100vh;
+}
+.content-container {
+  background: rgba(255,248,230,.9);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 8px 16px rgba(0,0,0,.3);
+  margin: 30px auto;      /* centraliza horizontalmente */
+  max-width: 1200px;      /* não deixa ficar enorme em telas grandes */
+}
 
+table {
+  margin: 0 auto;          /* centraliza horizontalmente a tabela */
+}
+.navbar .cart-icon { font-size:1.5rem; color:white; cursor:pointer; position:relative; }
+.cart-count-badge { position:absolute; top:-6px; right:-8px; background:#ffc107; color:black; border-radius:50%; padding:2px 7px; font-size:.75rem; font-weight:700; }
+.qty-controls button { min-width:30px; }
+</style>
 </head>
-
 <body>
-
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-
-<div class="container">
-
-<a class="navbar-brand" href="index.html">📚 Biblioteca</a>
-
-<button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
-<span class="navbar-toggler-icon"></span>
-</button>
-
-<div class="collapse navbar-collapse" id="menu">
-
-<ul class="navbar-nav ms-auto">
-
-<li class="nav-item">
-<a class="nav-link" href="index.html">Início</a>
-</li>
-
-<li class="nav-item">
-<a class="nav-link" href="livros.html">Livros</a>
-</li>
-
-<li class="nav-item">
-<a class="nav-link" href="cadastrar.html">Cadastrar</a>
-</li>
-
-</ul>
-
-</div>
-
-</div>
-
+  <div class="container">
+    <a class="navbar-brand" href="#">📚 Biblioteca</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item"><a class="nav-link" href="index.html">Início</a></li>
+        <li class="nav-item"><a class="nav-link" href="livros.html">Livros</a></li>
+        <li class="nav-item"><a class="nav-link" href="cadastrar.html">Cadastrar</a></li>
+        <li class="nav-item ms-3 position-relative">
+          <i class="bi bi-cart3 cart-icon" data-bs-toggle="modal" data-bs-target="#cartModal"></i>
+          <span id="cartCount" class="cart-count-badge" style="display:none">0</span>
+        </li>
+      </ul>
+    </div>
+  </div>
 </nav>
 
-<div class="container mt-5">
+<div class="container content-container">
+  <h2 class="text-center mb-4"><i class="bi bi-book-half text-warning"></i> Catálogo de Livros</h2>
+  <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+    <input type="text" id="searchInput" class="form-control w-100 w-md-50" placeholder="Buscar livro..." onkeyup="buscarLivro()">
+  </div>
 
-<h2>Lista de Livros</h2>
-
-<table class="table table-striped">
-
-<thead>
-
-<tr>
-
-<th>ID</th>
-<th>Título</th>
-<th>Autor</th>
-<th>Ano</th>
-<th>Ações</th>
-
-</tr>
-
-</thead>
-
-<tbody id="listaLivros">
-
-</tbody>
-
-</table>
-
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+      <tr><th>ID</th><th>Título</th><th>Autor</th><th>Ano</th><th>Valor (R$)</th><th>Status</th><th>Quantidade</th><th></th></tr>
+    </thead>
+    <tbody id="tabelaLivros">
+      <tr data-id="1"><td>1</td><td>Dom Casmurro</td><td>Machado de Assis</td><td>1899</td><td class="valor">45.90</td><td><span class="badge bg-success">Disponível</span></td>
+        <td class="qty-controls"><div class="input-group input-group-sm" style="max-width:110px;"><button class="btn btn-outline-secondary" onclick="changeQty(this,-1)">-</button><input type="text" class="form-control text-center qty-input" value="0" readonly><button class="btn btn-outline-secondary" onclick="changeQty(this,1)">+</button></div></td>
+        <td><button class="btn btn-primary btn-sm" onclick="addToCart(1)">Adicionar</button></td>
+      </tr>
+      <tr data-id="2"><td>2</td><td>O Hobbit</td><td>J.R.R. Tolkien</td><td>1937</td><td class="valor">58.50</td><td><span class="badge bg-danger">Indisponível</span></td>
+        <td class="qty-controls"><div class="input-group input-group-sm" style="max-width:110px;"><button class="btn btn-outline-secondary" onclick="changeQty(this,-1)">-</button><input type="text" class="form-control text-center qty-input" value="0" readonly><button class="btn btn-outline-secondary" onclick="changeQty(this,1)">+</button></div></td>
+        <td><button class="btn btn-primary btn-sm" onclick="addToCart(2)">Adicionar</button></td>
+      </tr>
+      <tr data-id="3"><td>3</td><td>Orgulho e Preconceito</td><td>Jane Austen</td><td>1813</td><td class="valor">39.90</td><td><span class="badge bg-success">Disponível</span></td>
+        <td class="qty-controls"><div class="input-group input-group-sm" style="max-width:110px;"><button class="btn btn-outline-secondary" onclick="changeQty(this,-1)">-</button><input type="text" class="form-control text-center qty-input" value="0" readonly><button class="btn btn-outline-secondary" onclick="changeQty(this,1)">+</button></div></td>
+        <td><button class="btn btn-primary btn-sm" onclick="addToCart(3)">Adicionar</button></td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
-<script src="js/livros.js"></script>
+<!-- Modal Adicionar Livro -->
+<div class="modal fade" id="addModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Adicionar Livro</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input id="titulo" class="form-control mb-2" placeholder="Título">
+        <input id="autor" class="form-control mb-2" placeholder="Autor">
+        <input id="ano" type="number" min="1000" max="9999" class="form-control mb-2" placeholder="Ano">
+        <input id="valor" type="number" min="0" step="0.01" class="form-control mb-2" placeholder="Valor (R$)">
+        <select id="status" class="form-control mb-2"><option>Disponível</option><option>Indisponível</option></select>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-success" onclick="adicionarLivro()">Salvar</button></div>
+    </div>
+  </div>
+</div>
 
+<!-- Modal Carrinho -->
+<div class="modal fade" id="cartModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Seu Carrinho</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <table class="table"><thead><tr><th>Título</th><th>Quantidade</th><th>Subtotal (R$)</th></tr></thead><tbody id="cartItems"></tbody></table>
+        <div class="d-flex justify-content-between"><div><strong>Frete:</strong> R$ <span id="frete">15.00</span></div><div><strong>Total:</strong> R$ <span id="total">0.00</span></div></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-success" onclick="finalizarCompra()" data-bs-dismiss="modal">Finalizar Compra</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let contadorID=4, FRETE=15, carrinho={};
+function changeQty(btn,d){let i=btn.parentElement.querySelector('.qty-input');i.value=Math.max(0,parseInt(i.value)+d);}
+function addToCart(id){let l=document.querySelector(`tr[data-id="${id}"]`),q=parseInt(l.querySelector('.qty-input').value),v=parseFloat(l.querySelector('.valor').textContent),t=l.children[1].textContent;if(q<=0){alert('Selecione uma quantidade maior que zero.');return;}carrinho[id]?carrinho[id].quantidade+=q:carrinho[id]={titulo:t,quantidade:q,valorUnit:v};l.querySelector('.qty-input').value=0;atualizarCarrinho();}
+function atualizarCarrinho(){let totalItens=0,subtotal=0,ci=document.getElementById('cartItems'),cc=document.getElementById('cartCount');ci.innerHTML='';for(let id in carrinho){let it=carrinho[id],st=it.quantidade*it.valorUnit;subtotal+=st;totalItens+=it.quantidade;let tr=document.createElement('tr');tr.innerHTML=`<td>${it.titulo}</td><td>${it.quantidade}</td><td>R$ ${st.toFixed(2)}</td>`;ci.appendChild(tr);}cc.textContent=totalItens;cc.style.display=totalItens>0?'inline-block':'none';let total=subtotal+(totalItens>0?FRETE:0);document.getElementById('frete').textContent=totalItens>0?FRETE.toFixed(2):'0.00';document.getElementById('total').textContent=total.toFixed(2);}
+function finalizarCompra(){if(!Object.keys(carrinho).length){alert('Carrinho vazio!');return;}alert('Compra finalizada com sucesso!\nObrigado pela preferência :)');for(let id in carrinho)delete carrinho[id];atualizarCarrinho();}
+function adicionarLivro(){let t=document.getElementById('titulo').value.trim(),a=document.getElementById('autor').value.trim(),y=document.getElementById('ano').value.trim(),v=parseFloat(document.getElementById('valor').value),s=document.getElementById('status').value;if(!t||!a||!y||isNaN(v)||v<0){alert('Preencha todos os campos.');return;}let tb=document.getElementById('tabelaLivros'),b=s==='Disponível'?'<span class="badge bg-success">Disponível</span>':'<span class="badge bg-danger">Indisponível</span>',tr=document.createElement('tr');tr.setAttribute('data-id',contadorID);tr.innerHTML=`<td>${contadorID}</td><td>${t}</td><td>${a}</td><td>${y}</td><td class="valor">${v.toFixed(2)}</td><td>${b}</td><td class="qty-controls"><div class="input-group input-group-sm" style="max-width:110px;"><button class="btn btn-outline-secondary" onclick="changeQty(this,-1)">-</button><input type="text" class="form-control text-center qty-input" value="0" readonly><button class="btn btn-outline-secondary" onclick="changeQty(this,1)">+</button></div></td><td><button class="btn btn-primary btn-sm" onclick="addToCart(${contadorID})">Adicionar</button></td>`;tb.insertAdjacentElement('afterbegin',tr);contadorID++;['titulo','autor','ano','valor'].forEach(id=>document.getElementById(id).value='');document.getElementById('status').value='Disponível';bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();}
+function buscarLivro(){let input=document.getElementById('searchInput').value.toLowerCase();document.querySelectorAll('#tabelaLivros tr').forEach(tr=>tr.style.display=tr.innerText.toLowerCase().includes(input)?'':'none');}
+</script>
 </body>
-
 </html>

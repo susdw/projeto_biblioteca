@@ -25,3 +25,13 @@ color: white;
 padding: 120px;
 text-shadow: 2px 2px 5px black;
 }
+
+.hero{
+    height: 80vh;
+    background: url("https://images.unsplash.com/photo-1507842217343-583bb7270b66") center/cover;
+}
+
+.card img{
+    height: 200px;
+    object-fit: cover;
+}
