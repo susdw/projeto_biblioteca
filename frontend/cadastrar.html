@@ -1,91 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 
 <head>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cadastrar Livro</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
+<style>
+body {
+  background: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;
+  min-height: 100vh;
+}
+
+.container-box {
+  background: rgba(255,255,255,0.95);
+  padding: 25px;
+  border-radius: 12px;
+  max-width: 500px;
+  margin: 50px auto;
+}
+</style>
+
 </head>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <body>
 
+<!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
 
-<div class="container">
+    <a class="navbar-brand" href="index.html">📚 Biblioteca</a>
 
-<a class="navbar-brand" href="index.html">📚 Biblioteca</a>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-<button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
-<span class="navbar-toggler-icon"></span>
-</button>
+    <div class="collapse navbar-collapse" id="menu">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">Início</a>
+        </li>
 
-<div class="collapse navbar-collapse" id="menu">
+        <li class="nav-item">
+          <a class="nav-link" href="livros.html">Livros</a>
+        </li>
 
-<ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link active" href="cadastrar.html">Cadastrar</a>
+        </li>
+      </ul>
+    </div>
 
-<li class="nav-item">
-<a class="nav-link" href="index.html">Início</a>
-</li>
-
-<li class="nav-item">
-<a class="nav-link" href="livros.html">Livros</a>
-</li>
-
-<li class="nav-item">
-<a class="nav-link" href="cadastrar.html">Cadastrar</a>
-</li>
-
-</ul>
-
-</div>
-
-</div>
-
+  </div>
 </nav>
 
-<div class="container mt-5">
+<!-- FORMULÁRIO -->
+<div class="container-box">
 
-<h2>Cadastrar Livro</h2>
+<h2 class="text-center mb-4">📖 Cadastrar Livro</h2>
 
 <form id="formLivro">
 
 <div class="mb-3">
-
-<label>Título</label>
-
+<label class="form-label">Título</label>
 <input type="text" id="titulo" class="form-control" required>
-
 </div>
 
 <div class="mb-3">
-
-<label>Autor</label>
-
+<label class="form-label">Autor</label>
 <input type="text" id="autor" class="form-control" required>
-
 </div>
 
 <div class="mb-3">
-
-<label>Ano</label>
-
+<label class="form-label">Ano</label>
 <input type="number" id="ano" class="form-control">
-
 </div>
 
-<button class="btn btn-success">
-Salvar
+<div class="mb-3">
+<label class="form-label">Valor (R$)</label>
+<input type="number" id="valor" class="form-control" step="0.01" value="49.90">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Status</label>
+<select id="status" class="form-select">
+  <option value="Disponível">Disponível</option>
+  <option value="Indisponível">Indisponível</option>
+</select>
+</div>
+
+<button type="submit" class="btn btn-success w-100">
+Salvar Livro
 </button>
 
 </form>
 
 </div>
 
-<script src="js/livros.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// GARANTE QUE O HTML CARREGOU
+document.addEventListener("DOMContentLoaded", function(){
+
+  const form = document.getElementById("formLivro");
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let titulo = document.getElementById("titulo").value;
+    let autor = document.getElementById("autor").value;
+    let ano = document.getElementById("ano").value;
+    let valor = parseFloat(document.getElementById("valor").value);
+    let status = document.getElementById("status").value;
+
+    let novoLivro = {
+      titulo: titulo,
+      autor: autor,
+      ano: ano,
+      valor: valor,
+      status: status
+    };
+
+    // PEGAR DO LOCALSTORAGE
+    let livros = JSON.parse(localStorage.getItem("livros")) || [];
+
+    // ADICIONAR NOVO
+    livros.push(novoLivro);
+
+    // SALVAR
+    localStorage.setItem("livros", JSON.stringify(livros));
+
+    // FEEDBACK
+    alert("✅ Livro cadastrado com sucesso!");
+
+    // LIMPAR FORM
+    form.reset();
+  });
+
+});
+</script>
 
 </body>
-
 </html>
