@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo de Livros</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+body {
+  background: url('https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;
+  min-height: 100vh;
+}
+
+.content-container {
+  background: rgba(255,248,230,.95);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 1200px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  h2 { font-size: 20px; }
+  .btn { font-size: 12px; padding: 5px 8px; }
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="#">📚 Biblioteca</a>
+
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item"><a class="nav-link" href="index.html">Início</a></li>
+        <li class="nav-item"><a class="nav-link active" href="livros.html">Livros</a></li>
+        <li class="nav-item"><a class="nav-link" href="cadastrar.html">Cadastrar</a></li>
+
+        <li class="nav-item ms-3">
+          <div onclick="abrirCarrinho()" style="cursor:pointer;" class="position-relative">
+            <i class="bi bi-cart3 text-white" style="font-size:1.5rem;"></i>
+            <span id="contadorCarrinho" class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+              0
+            </span>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container content-container">
+
+<h2 class="text-center mb-4">📚 Catálogo de Livros</h2>
+
+<input type="text" id="searchInput" class="form-control mb-3" placeholder="Buscar livro..." onkeyup="buscarLivro()">
+
+<div class="table-responsive">
+<table class="table table-striped table-hover text-center align-middle">
+<thead class="table-dark">
+<tr>
+<th>ID</th>
+<th>Título</th>
+<th>Autor</th>
+<th>Ano</th>
+<th>Valor</th>
+<th>Status</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="tabelaLivros"></tbody>
+</table>
+</div>
+
+</div>
+
+<div class="modal fade" id="modalCarrinho">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5>🛒 Carrinho</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <ul id="listaCarrinho"></ul>
+        <h5 id="totalCompra"></h5>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-success" onclick="finalizarCompra()">Finalizar Compra</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+let contadorID = 1;
+let carrinho = [];
+
+function criarLivro(t,a,y,v,s){
+  let tr = document.createElement("tr");
+  tr.setAttribute("data-id", contadorID);
+
+  let statusBadge = s === "Disponível"
+    ? '<span class="badge bg-success">Disponível</span>'
+    : '<span class="badge bg-danger">Indisponível</span>';
+
+  tr.innerHTML = `
+    <td>${contadorID}</td>
+    <td>${t}</td>
+    <td>${a}</td>
+    <td>${y}</td>
+    <td>R$ ${parseFloat(v).toFixed(2)}</td>
+    <td>${statusBadge}</td>
+    <td>
+      <button class="btn btn-primary btn-sm mb-1" onclick="adicionarCarrinho(${contadorID})">Comprar</button>
+      <button class="btn btn-warning btn-sm mb-1" onclick="editarLivro(${contadorID})">Editar</button>
+      <button class="btn btn-danger btn-sm" onclick="excluirLivro(${contadorID})">Excluir</button>
+    </td>
+  `;
+
+  document.getElementById("tabelaLivros").appendChild(tr);
+  contadorID++;
+}
+
+function editarLivro(id){
+  let tr = document.querySelector(`tr[data-id="${id}"]`);
+
+  let novoTitulo = prompt("Novo título:", tr.children[1].innerText);
+  let novoAutor = prompt("Novo autor:", tr.children[2].innerText);
+
+  if(novoTitulo && novoAutor){
+
+    let livros = JSON.parse(localStorage.getItem("livros")) || [];
+
+    livros[id - 1].titulo = novoTitulo;
+    livros[id - 1].autor = novoAutor;
+
+    localStorage.setItem("livros", JSON.stringify(livros));
+
+    alert("✏️ Livro atualizado!");
+    location.reload();
+  }
+}
+
+function excluirLivro(id){
+  if(confirm("Excluir livro?")){
+
+    let livros = JSON.parse(localStorage.getItem("livros")) || [];
+
+    livros.splice(id - 1, 1);
+
+    localStorage.setItem("livros", JSON.stringify(livros));
+
+    location.reload();
+  }
+}
+
+function adicionarCarrinho(id){
+  let tr = document.querySelector(`tr[data-id="${id}"]`);
+
+  let titulo = tr.children[1].innerText;
+  let valor = parseFloat(tr.children[4].innerText.replace("R$ ",""));
+  let status = tr.children[5].innerText;
+
+  if(status === "Indisponível"){
+    alert("❌ Livro indisponível!");
+    return;
+  }
+
+  carrinho.push({titulo, valor});
+  atualizarCarrinho();
+  alert("✅ Adicionado ao carrinho!");
+}
+
+function atualizarCarrinho(){
+  document.getElementById("contadorCarrinho").innerText = carrinho.length;
+}
+
+function abrirCarrinho(){
+  let lista = document.getElementById("listaCarrinho");
+  let total = 0;
+
+  lista.innerHTML = "";
+
+  carrinho.forEach(item=>{
+    lista.innerHTML += `<li>${item.titulo} - R$ ${item.valor.toFixed(2)}</li>`;
+    total += item.valor;
+  });
+
+  document.getElementById("totalCompra").innerText = "Total: R$ " + total.toFixed(2);
+
+  new bootstrap.Modal(document.getElementById("modalCarrinho")).show();
+}
+
+function finalizarCompra(){
+  alert("🎉 Compra finalizada!");
+  carrinho = [];
+  atualizarCarrinho();
+}
+
+function buscarLivro(){
+  let filtro = document.getElementById("searchInput").value.toLowerCase();
+
+  document.querySelectorAll("#tabelaLivros tr").forEach(tr=>{
+    tr.style.display = tr.innerText.toLowerCase().includes(filtro) ? "" : "none";
+  });
+}
+
+window.onload = ()=>{
+
+  let livros = JSON.parse(localStorage.getItem("livros")) || [];
+
+  if(livros.length === 0){
+    livros = [
+      {titulo:"Dom Casmurro", autor:"Machado de Assis", ano:1899, valor:45.90, status:"Disponível"},
+      {titulo:"O Hobbit", autor:"Tolkien", ano:1937, valor:58.50, status:"Indisponível"},
+      {titulo:"Orgulho e Preconceito", autor:"Jane Austen", ano:1813, valor:39.90, status:"Disponível"}
+    ];
+    localStorage.setItem("livros", JSON.stringify(livros));
+  }
+
+  document.getElementById("tabelaLivros").innerHTML = "";
+  contadorID = 1;
+
+  livros.forEach(livro => {
+    criarLivro(livro.titulo, livro.autor, livro.ano, livro.valor, livro.status);
+  });
+
+}
+
+</script>
+
+</body>
+</html>

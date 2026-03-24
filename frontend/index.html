@@ -1,190 +1,113 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!doctype html>
+<html lang="pt-br">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Biblioteca Digital</title>
-  <link rel="icon" href="assets/img/icon.png" type="image/png">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inconsolata:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Biblioteca Digital</title>
+
+<link rel="icon" type="image/png" href="img/icon.png" />
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+<link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
 
-<!-- tela de login -->
-<div id="login-page">
-  <div class="login-wrap">
-    <div class="text-center mb-4">
-      <div class="login-eyebrow">Biblioteca Digital</div>
-      <h1 class="login-title" id="login-heading">Bem-vindo</h1>
-    </div>
-    <div id="server-msg" style="display:none"></div>
-    <div class="login-box" id="login-box"></div>
-    <p class="text-center mt-3" style="font-family:var(--mono);font-size:12px;color:var(--dim)" id="login-toggle-row"></p>
-  </div>
-</div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">📚 Biblioteca</a>
 
-<!-- arquitetura do app (ou shell em ingles) -->
-<div id="app-shell" style="display:none">
-<header id="app-header">
-  <div style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">
-    <span class="brand">Biblioteca</span>
-    <span class="brand-badge" id="admin-badge" style="display:none">admin</span>
-  </div>
-  <nav class="nav-tabs-custom" id="main-nav" style="display:none">
-    <button class="nav-tab active" data-tab="livros">Livros</button>
-    <button class="nav-tab"        data-tab="usuarios">Usuários</button>
-  </nav>
-  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-    <button class="hamburger-btn" id="hamburger-btn" style="display:none" onclick="App.toggleHamburger()">
-      <span></span><span></span><span></span>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#menu"
+    >
+      <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="user-chip" id="user-chip-wrap"></div>
+
+    <div class="collapse navbar-collapse" id="menu">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">Início</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="livros.html">Livros</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="cadastrar.html">Cadastrar</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<header class="hero text-center text-white d-flex align-items-center">
+  <div class="container">
+    <h1 class="display-4 fw-bold">📚 Biblioteca Digital</h1>
+    <p class="lead">Organize, cadastre e explore livros de forma simples e rápida</p>
+    <a href="livros.html" class="btn btn-warning btn-lg mt-3">Ver catálogo</a>
   </div>
 </header>
 
-<!-- navegação para mobile -->
-<div id="mobile-nav-drawer">
-  <button class="nav-tab-mobile active" data-tab="livros">Livros</button>
-  <button class="nav-tab-mobile" data-tab="usuarios">Usuários</button>
-</div>
+<section class="container my-5 text-center">
+  <h2 class="mb-3">Sobre o Sistema</h2>
+  <p>
+    Nosso sistema de biblioteca permite cadastrar, visualizar e gerenciar livros
+    de forma prática. Ideal para escolas, projetos ou uso pessoal.
+  </p>
+</section>
 
-  <main id="app-main">
+<section class="container my-5">
+  <div class="row g-4">
 
-    <!-- lista -->
-    <div id="page-list" class="page active">
-
-      <!-- seção de livros -->
-      <div id="books-section">
-        <div class="section-header">
-          <h2 class="section-heading">Livros</h2>
-          <span class="results-count" id="books-results-count"></span>
-          <div class="section-actions">
-            <div id="books-admin-bar" style="display:none">
-              <button class="btn-lib btn-primary-lib" onclick="App.goCreate('livros')">+ Novo livro</button>
-            </div>
-          </div>
+    <div class="col-md-4">
+      <div class="card shadow">
+        <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794" class="card-img-top">
+        <div class="card-body text-center">
+          <h5 class="card-title">📖 Catálogo</h5>
+          <p>Veja todos os livros disponíveis de forma organizada.</p>
+          <a href="livros.html" class="btn btn-dark">Acessar</a>
         </div>
-
-        <!-- filtro de livros -->
-        <div class="filters-bar" id="books-filters-bar">
-          <input  class="searchbar" id="books-search" placeholder="Buscar por título…" oninput="App.onBookFilterChange()" />
-          <select class="filter-select" id="books-status-filter" onchange="App.onBookFilterChange()" style="display:none">
-            <option value="">Todos os status</option>
-            <option value="active">Disponível</option>
-            <option value="inactive">Indisponível</option>
-            <option value="out_of_stock">Esgotado</option>
-          </select>
-          <div style="display:flex;align-items:center;gap:6px">
-            <input class="filter-input" id="books-min-price" type="number" min="0" placeholder="Preço mín." oninput="App.onBookFilterChange()" style="width:100px" />
-            <span  class="filter-separator">–</span>
-            <input class="filter-input" id="books-max-price" type="number" min="0" placeholder="Preço máx." oninput="App.onBookFilterChange()" style="width:100px" />
-          </div>
-          <select class="filter-select" id="books-sort" onchange="App.onBookFilterChange()">
-            <option value="name_asc">Título A–Z</option>
-            <option value="name_desc">Título Z–A</option>
-            <option value="price_asc">Menor preço</option>
-            <option value="price_desc">Maior preço</option>
-            <option value="stock_desc">Maior estoque</option>
-            <option value="stock_asc">Menor estoque</option>
-          </select>
-          <select class="filter-select" id="books-per-page" onchange="App.updateBooksPerPage(this.value)">
-            <option value="12" selected>12 / pág.</option>
-            <option value="24">24 / pág.</option>
-            <option value="48">48 / pág.</option>
-          </select>
-          <button class="btn-lib btn-ghost-lib sm" id="books-clear-btn" style="display:none" onclick="App.clearBookFilters()">× Limpar</button>
-        </div>
-
-        <div id="books-loading" class="spinner-wrap"><div class="spinner-ring"></div></div>
-        <div id="books-grid" class="books-grid" style="display:none"></div>
-        <div id="books-empty" class="empty-state" style="display:none">
-          <p id="books-empty-msg">Nenhum livro encontrado.</p>
-          <button class="btn-lib btn-ghost-lib sm" id="books-empty-clear" style="display:none" onclick="App.clearBookFilters()">Limpar filtros</button>
-        </div>
-        <div id="books-pagination"></div>
-      </div>
-
-      <!-- seção de usuarios (somente admin) -->
-      <div id="users-section" style="display:none">
-        <div class="section-header">
-          <h2 class="section-heading">Usuários</h2>
-          <span class="results-count" id="users-results-count"></span>
-          <div class="section-actions">
-            <button class="btn-lib btn-primary-lib" onclick="App.goCreate('usuarios')">+ Novo usuário</button>
-          </div>
-        </div>
-
-        <!-- filtros de usuario -->
-        <div class="filters-bar">
-          <input  class="searchbar"     id="users-search"        placeholder="Buscar por nome ou e-mail…" style="max-width:300px" oninput="App.onUserFilterChange()" />
-          <select class="filter-select" id="users-role-filter"   onchange="App.onUserFilterChange()">
-            <option value="">Todas as funções</option>
-            <option value="client">Cliente</option>
-            <option value="admin">Administrador</option>
-          </select>
-          </select>
-          <select class="filter-select" id="users-per-page" onchange="App.updateUsersPerPage(this.value)">
-            <option value="10" selected>10 / pág.</option>
-            <option value="25">25 / pág.</option>
-            <option value="50">50 / pág.</option>
-          </select>
-          <button class="btn-lib btn-ghost-lib sm" id="users-clear-btn" style="display:none" onclick="App.clearUserFilters()">× Limpar</button>
-        </div>
-
-        <div id="users-loading" class="spinner-wrap"><div class="spinner-ring"></div></div>
-        <div id="users-list"    class="users-list"  style="display:none"></div>
-        <div id="users-empty"   class="empty-state" style="display:none">
-          <p>Nenhum usuário encontrado.</p>
-          <button class="btn-lib btn-ghost-lib sm" id="users-empty-clear" style="display:none" onclick="App.clearUserFilters()">Limpar filtros</button>
-        </div>
-        <div id="users-pagination"></div>
       </div>
     </div>
 
-    <!-- pagina de livro -->
-    <div id="page-book-detail" class="page fade-in">
-      <button class="back-btn" onclick="App.goList()">← Voltar</button>
-      <div class="detail-grid" id="book-detail-content"></div>
+    <div class="col-md-4">
+      <div class="card shadow">
+        <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f" class="card-img-top">
+        <div class="card-body text-center">
+          <h5 class="card-title">➕ Cadastro</h5>
+          <p>Adicione novos livros facilmente ao sistema.</p>
+          <a href="cadastrar.html" class="btn btn-dark">Cadastrar</a>
+        </div>
+      </div>
     </div>
 
-    <!-- pagina de usuario -->
-    <div id="page-user-detail" class="page fade-in">
-      <button class="back-btn" onclick="App.goList()">← Voltar</button>
-      <div id="user-detail-content" style="max-width:560px"></div>
+    <div class="col-md-4">
+      <div class="card shadow">
+        <img src="https://images.unsplash.com/photo-1495446815901-a7297e633e8d" class="card-img-top">
+        <div class="card-body text-center">
+          <h5 class="card-title">⚡ Praticidade</h5>
+          <p>Interface simples, rápida e eficiente para o dia a dia.</p>
+        </div>
+      </div>
     </div>
 
-    <!-- cadastro de livro -->
-    <div id="page-create-book" class="page fade-in">
-      <button class="back-btn" onclick="App.goList()">← Cancelar</button>
-      <h2 class="section-heading mb-4">Novo livro</h2>
-      <div class="form-panel" id="create-book-form"></div>
-    </div>
-
-    <!-- cadastro de usuario -->
-    <div id="page-create-user" class="page fade-in">
-      <button class="back-btn" onclick="App.goList()">← Cancelar</button>
-      <h2 class="section-heading mb-4">Novo usuário</h2>
-      <div class="form-panel" id="create-user-form"></div>
-    </div>
-
-  </main>
-</div>
-
-<!-- notificação (toast em ingles) -->
-<div id="toast"></div>
-
-<!-- confirmação -->
-<div id="confirm-overlay">
-  <div class="confirm-box">
-    <p class="confirm-msg" id="confirm-msg"></p>
-    <div class="d-flex gap-2 flex-wrap">
-      <button class="btn-lib btn-danger-lib" onclick="App.confirmYes()">Confirmar</button>
-      <button class="btn-lib btn-ghost-lib"  onclick="App.confirmNo()">Cancelar</button>
-    </div>
   </div>
-</div>
+</section>
 
-<script type="module" src="js/main.js"></script>
+<section class="bg-dark text-white text-center p-5">
+  <h2>Comece agora mesmo</h2>
+  <p>Gerencie sua biblioteca com facilidade</p>
+  <a href="cadastrar.html" class="btn btn-warning">Cadastrar Livro</a>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
