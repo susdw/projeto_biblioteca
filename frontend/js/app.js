@@ -1,309 +1,13 @@
-// CONFIGURAÇÕES
-export const API_BASE = "http://localhost:3000/api";
-export const IMG_BASE = "http://localhost:3000";
-export const SESSION_KEY = "biblioteca_usuario";
+// Controlador principal da aplicação
 
-const STATUS_COLORS = { active: '#b8ff57', inactive: '#ff6b6b', out_of_stock: '#ffaa00' };
-const STATUS_LABELS = { active: 'Disponível', inactive: 'Indisponível', out_of_stock: 'Esgotado' };
-const ROLE_LABELS = { client: 'Cliente', admin: 'Administrador' };
+import { API_BASE, SESSION_KEY, STATUS_COLORS, STATUS_LABELS, ROLE_LABELS } from './config.js';
+import { runValidation } from './validators.js';
+import { formatPrice, deriveStatus, escapeHtml } from './helpers.js';
+import { tagHtml, coverHtml, buildField, addressFieldsHtml, buildPaginationHtml } from './ui.js';
+import { apiFetch, mapBookFormToApi } from './api.js';
+import { State, showToast, showConfirm, confirmYes, confirmNo } from './state.js';
 
-// VALIDAÇÃO DE DADOS
-const VALIDATORS = {
-  name: (value) => {
-    const text = value?.trim();
-    if (!text) return 'Nome é obrigatório';
-    if (text.length < 2) return 'Mín. 2 caracteres';
-    if (text.length > 255) return 'Máx. 255 caracteres';
-    return null;
-  },
-
-  title: (value) => {
-    const text = value?.trim();
-    if (!text) return 'Título é obrigatório';
-    if (text.length > 255) return 'Máx. 255 caracteres';
-    return null;
-  },
-
-  author: (value) => {
-    const text = value?.trim();
-    if (!text) return 'Autor é obrigatório';
-    if (text.length < 2) return 'Mín. 2 caracteres';
-    if (text.length > 255) return 'Máx. 255 caracteres';
-    return null;
-  },
-
-  email: (value) => {
-    const text = value?.trim();
-    if (!text) return 'E-mail é obrigatório';
-    
-    // regex significa expressão regular, nesse caso, é usada pra validar emails (achei na internet)
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    if (!emailRegex.test(text)) return 'E-mail inválido';
-    
-    return null;
-  },
-
-  password: (value) => {
-    if (!value) return 'Senha é obrigatória';
-    if (value.length < 4) return 'Mín. 4 caracteres';
-    if (value.length > 255) return 'Máx. 255 caracteres';
-    return null;
-  },
-
-  phone: (value) => {
-    if (!value?.trim()) return null; // telefone é opcional
-    
-    const digits = value.replace(/\D/g, ''); // remove oq nao é numero
-    if (digits.length > 0 && digits.length < 10) return 'Mín. 10 dígitos';
-    if (digits.length > 15) return 'Número muito longo';
-    
-    return null;
-  },
-
-  price: (value) => {
-    if (value === '' || value == null) return 'Preço é obrigatório';
-    
-    const num = Number(value);
-    if (isNaN(num)) return 'Deve ser um número';
-    if (num < 0) return 'Não pode ser negativo';
-    
-    return null;
-  },
-
-  stock: (value) => {
-    if (value === '' || value == null) return 'Estoque é obrigatório';
-    
-    const num = Number(value);
-    if (isNaN(num) || !Number.isInteger(num)) return 'Deve ser número inteiro';
-    if (num < 0) return 'Não pode ser negativo';
-    
-    return null;
-  },
-
-
-  street: (value) => !value?.trim() ? 'Rua é obrigatória' : null,
-  city: (value) => !value?.trim() ? 'Cidade é obrigatória' : null,
-  state: (value) => !value?.trim() ? 'Estado é obrigatório' : null,
-  zipCode: (value) => !value?.trim() ? 'CEP é obrigatório' : null,
-};
-
-// roda a validação em um grupo de campos do formulário e devolve os erros.
-// chama as funções (campos) do VALIDATORS. 
-function runValidation(fields, form) {
-  const errors = {};
-  fields.forEach(field => {
-    const error = VALIDATORS[field]?.(form[field]);
-    if (error) errors[field] = error;
-  });
-  return errors;
-}
-
-// HELPERS (FUNÇÕES AUXILIÁRES)
-
-// formata valores numéricos para o padrão de moeda brasileiro (R$) ou mostra "GRÁTIS".
-function formatPrice(n) {
-  const num = Number(n);
-  if (isNaN(num)) return '—';
-  if (num === 0) return 'GRÁTIS';
-  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-// descobre qual deve ser o status real do livro olhando para a quantidade em estoque.
-function deriveStatus(stock, currentStatus) {
-  if (currentStatus === 'inactive') return 'inactive';
-  if (Number(stock) === 0) return 'out_of_stock';
-  if (currentStatus === 'out_of_stock') return 'active';
-  return currentStatus;
-}
-
-// limpa caracteres perigosos para evitar ataques de injeção de HTML (XSS).
-function escapeHtml(str) {
-  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// CONSTRUTORES DE INTERFACE
-
-// cria as etiquetas coloridas (usadas em status, funções de usuário, etc).
-function tagHtml(label, color) {
-  return `<span class="tag" style="background:${color}18;border:1px solid ${color}40;color:${color}">${label}</span>`;
-}
-
-// retorna a imagem da capa do livro. se não tiver, coloca um emoji de livro no lugar.
-function coverHtml(src, size = 120) {
-  const height = Math.round(size * 1.4);
-  const fallback = `Object.assign(document.createElement('div'),{className:'cover-placeholder',style:'width:${size}px;height:${height}px;font-size:${Math.round(size * .32)}px;flex-shrink:0',textContent:'📖'})`;
-  if (!src) return `<div class="cover-placeholder" style="width:${size}px;height:${height}px;font-size:${Math.round(size * .32)}px;flex-shrink:0">📖</div>`;
-  return `<img src="${IMG_BASE}${src}" alt="Capa" onerror="this.replaceWith(${fallback})" style="width:${size}px;height:${height}px;object-fit:cover;border-radius:2px;flex-shrink:0;display:block" />`;
-}
-
-// monta os inputs, textareas e selects de forma padronizada, já lidando com erros e dicas.
-function buildField({ label, name, type = 'text', value = '', placeholder = '', required = false, as = 'input', options = [], hint = '', error = '', colSpan }) {
-  const spanStyle = colSpan ? `grid-column:span ${colSpan}` : '';
-  const errorClass = error ? 'err' : '';
-  const labelClass = error ? 'error' : '';
-  let inputHtml = '';
-
-  if (as === 'textarea') {
-    inputHtml = `<textarea class="field-input ${errorClass}" name="${name}" placeholder="${placeholder}"
-        oninput="App.handleInput(this)"
-        onfocus="if(!this.classList.contains('err'))this.style.borderColor='var(--accent)'"
-        onblur="this.style.borderColor=''">${escapeHtml(value)}</textarea>`;
-  } else if (as === 'select') {
-    const optionsHtml = options.map(opt =>
-      `<option value="${escapeHtml(opt.value)}" ${opt.value === value ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`
-    ).join('');
-    inputHtml = `<select class="field-input ${errorClass}" name="${name}" onchange="App.handleInput(this)">${optionsHtml}</select>`;
-  } else {
-    inputHtml = `<input class="field-input ${errorClass}" type="${type}" name="${name}"
-        value="${escapeHtml(value)}" placeholder="${placeholder}"
-        oninput="App.handleInput(this)"
-        onfocus="if(!this.classList.contains('err'))this.style.borderColor='var(--accent)'"
-        onblur="this.style.borderColor=''" />`;
-  }
-
-  return `
-    <div style="${spanStyle}">
-      <label class="field-label ${labelClass}">${label}${required ? '<span class="required-star"> *</span>' : ''}</label>
-      ${error ? `<page class="field-error">⚠ ${error}</page>` : ''}
-      ${inputHtml}
-      ${hint && !error ? `<page class="field-hint">${hint}</page>` : ''}
-    </div>`;
-}
-
-// bloco de campos de endereço padrão para reaproveitarmos onde precisar.
-function addressFieldsHtml(form = {}, errors = {}) {
-  return `
-    <div class="form-section-divider">
-      <page class="form-section-title">Endereço</page>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
-        ${buildField({ label: 'Rua', name: 'street', value: form.street, placeholder: 'Rua das Flores', required: true, error: errors.street, colSpan: 2 })}
-        ${buildField({ label: 'Número', name: 'number', value: form.number, placeholder: '123' })}
-        ${buildField({ label: 'Bairro', name: 'neighborhood', value: form.neighborhood, placeholder: 'Centro' })}
-        ${buildField({ label: 'Cidade', name: 'city', value: form.city, placeholder: 'Curitiba', required: true, error: errors.city })}
-        ${buildField({ label: 'Estado', name: 'state', value: form.state, placeholder: 'PR', required: true, error: errors.state })}
-        ${buildField({ label: 'CEP', name: 'zipCode', value: form.zipCode, placeholder: '80000-000', required: true, error: errors.zipCode, colSpan: 2 })}
-      </div>
-    </div>`;
-}
-
-// cria os botões de navegação das páginas (com "..." se houverem muitas páginas).
-function buildPaginationHtml(currentPage, totalPages, callbackName) {
-  if (totalPages <= 1) return '';
-  const range = [1];
-  if (currentPage > 3) range.push('…');
-  for (let page = Math.max(2, currentPage - 1); page <= Math.min(totalPages - 1, currentPage + 1); page++) range.push(page);
-  if (currentPage < totalPages - 2) range.push('…');
-  if (totalPages > 1) range.push(totalPages);
-
-  const buttons = range.map(page =>
-    page === '…'
-      ? `<span class="page-ellipsis">…</span>`
-      : `<button class="page-btn ${page === currentPage ? 'active' : ''}" onclick="${callbackName}(${page})">${page}</button>`
-  ).join('');
-
-  return `
-    <div class="pagination-wrap">
-      <button class="page-btn arrow" onclick="${callbackName}(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>
-      ${buttons}
-      <button class="page-btn arrow" onclick="${callbackName}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>
-      <span class="pagination-info">Página ${currentPage} de ${totalPages}</span>
-    </div>`;
-}
-
-// COMUNICAÇÃO COM A API
-
-// um wrapper em volta do fetch para facilitar o tratamento de erros e conversões de JSON.
-async function apiFetch(url, options = {}) {
-  const response = await fetch(url, options);
-  const text = await response.text();
-  try {
-    const data = JSON.parse(text);
-    if (!response.ok) throw new Error(data.error || response.statusText);
-    return data;
-  } catch (err) {
-    if (err.message.includes('JSON')) throw new Error(`Erro do servidor (${response.status})`);
-    throw err;
-  }
-}
-
-// pega os dados do formulário e traduz para os nomes que a API espera.
-function mapBookFormToApi(form) {
-  return {
-    nome: form.title.trim(),
-    descricao: form.description,
-    estoque: Number(form.stock),
-    preco: Number(form.price),
-    status: form.status,
-    idCategoria: form.categoryId || null,
-  };
-}
-
-// UTILITÁRIOS VISUAIS (toast, ou notifação, e modais)
-
-let toastTimer = null;
-// mostra o alerta que some sozinho (toast).
-function showToast(message, type = 'ok') {
-  const el = document.getElementById('toast');
-  el.textContent = message;
-  el.className = type;
-  el.style.display = 'block';
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
-}
-
-let confirmCallback = null;
-// mostra um popup pedindo confirmação do usuário (ex: antes de deletar algo).
-function showConfirm(message, callback) {
-  document.getElementById('confirm-msg').textContent = message;
-  document.getElementById('confirm-overlay').classList.add('open');
-  confirmCallback = callback;
-}
-
-// ESTADO GLOBAL (STATE)
-
-// guarda o estado atual do app. a conta logada, página atual, etc.
-const State = {
-  currentUser: null,
-  viewMode: 'client', // admin ou client
-  activeTab: 'livros', // livros ou usuários
-
-  allBooks: [],
-  allUsers: [],
-  selectedBook: null,
-  selectedUser: null,
-  reloadCallback: null,
-
-  // controle de paginação
-  booksPage: 1,
-  booksPerPage: 12,
-  usersPage: 1,
-  usersPerPage: 10,
-
-  // formulário de edição de livro (usado na tela de detalhes)
-  bookEditForm: { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' },
-  bookEditErrors: {},
-  bookEditCoverFile: null,
-  isEditingBook: false,
-
-  // formulário de edição de usuário
-  userEditForm: { name: '', email: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
-  userEditErrors: {},
-  isEditingUser: false,
-
-  // cadastro de novo livro
-  newBookForm: { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' },
-  newBookFormErrors: {},
-  newBookCoverFile: null,
-
-  // cadastro de novo usuário
-  newUserForm: { name: '', email: '', password: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
-  newUserFormErrors: {},
-};
-
-// CONTROLADOR (APP)
-
-// o controlador reage ao usuário e atualiza a tela.
-const App = {
+export const App = {
 
   // tenta puxar a sessão salva. se der bom, abre o app, se não, pede login.
   init() {
@@ -313,26 +17,25 @@ const App = {
         State.currentUser = JSON.parse(saved);
         State.viewMode = State.currentUser.role === 'admin' ? 'admin' : 'client';
       }
-    } catch { 
-      // erro
+    } catch {
+      // erro silencioso
     }
-
     State.currentUser ? this.showApp() : this.showLogin('login');
   },
 
-  // login e cadastro
+  // LOGIN E CADASTRO
+
   showLogin(mode) {
     document.getElementById('login-page').style.display = '';
     document.getElementById('app-shell').style.display = 'none';
     this._renderLoginForm(mode);
   },
 
-  // renderiza o formulario de login
   _renderLoginForm(mode) {
     document.getElementById('login-heading').textContent = mode === 'login' ? 'Bem-vindo' : 'Criar conta';
     document.getElementById('server-msg').style.display = 'none';
     const isRegister = mode === 'register';
-    
+
     document.getElementById('login-box').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         ${isRegister ? buildField({ label: 'Nome completo', name: 'name', placeholder: 'João Silva', required: true, colSpan: 2 }) : ''}
@@ -356,7 +59,6 @@ const App = {
       </button>`;
   },
 
-  // conclui o login (envia o formulário)
   async submitLogin(mode) {
     const box = document.getElementById('login-box');
     const formData = {};
@@ -415,7 +117,6 @@ const App = {
     }
   },
 
-  // mostra mensagem
   _showServerMsg(message, isSuccess) {
     const el = document.getElementById('server-msg');
     el.className = 'server-msg ' + (isSuccess ? 'ok' : 'err');
@@ -423,14 +124,14 @@ const App = {
     el.style.display = '';
   },
 
-  // desconectar
   logout() {
     localStorage.removeItem(SESSION_KEY);
     State.currentUser = null; State.viewMode = 'client';
     this.showLogin('login');
   },
 
-  // carrega o app
+  // APP SHELL
+
   showApp() {
     document.getElementById('login-page').style.display = 'none';
     document.getElementById('app-shell').style.display = '';
@@ -439,7 +140,6 @@ const App = {
     this.loadBooks();
   },
 
-  // carrega o header (barra no topo da tela)
   _renderHeader() {
     const user = State.currentUser;
     const isAdmin = user.role === 'admin';
@@ -505,7 +205,7 @@ const App = {
     this.loadBooks();
   },
 
-  // navegação entre páginas internas (estilo SPA)
+  // NAVEGAÇÃO (SPA)
 
   _showPage(pageId) {
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
@@ -522,10 +222,8 @@ const App = {
     document.getElementById('users-section').style.display =
       (inAdmin && State.activeTab === 'usuarios') ? '' : 'none';
 
-    // admins precisam ver o filtro de status (porque podem ver livros inativos)
     const statusFilter = document.getElementById('books-status-filter');
     if (statusFilter) statusFilter.style.display = inAdmin ? '' : 'none';
-
     document.getElementById('books-admin-bar').style.display = inAdmin ? '' : 'none';
   },
 
@@ -548,7 +246,7 @@ const App = {
     }
   },
 
-  // gestão de livros
+  // GESTÃO DE LIVROS
 
   async loadBooks() {
     document.getElementById('books-loading').style.display = 'flex';
@@ -557,8 +255,8 @@ const App = {
     try {
       State.allBooks = await apiFetch(`${API_BASE}/products/produtos`);
       this.renderBookGrid();
-    } catch { 
-      // erro
+    } catch {
+      // erro silencioso
     }
     document.getElementById('books-loading').style.display = 'none';
   },
@@ -578,7 +276,6 @@ const App = {
     const inAdmin = State.currentUser?.role === 'admin' && State.viewMode === 'admin';
 
     let result = books.filter(book => {
-      // se for cliente, não deixa ver os livros inativos
       if (!inAdmin && book.status !== 'active') return false;
       if (search && !book.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (status && book.status !== status) return false;
@@ -619,7 +316,6 @@ const App = {
     const paginationEl = document.getElementById('books-pagination');
 
     countEl.textContent = `${total} ${total === 1 ? 'livro' : 'livros'}`;
-
     const hasFilters = this._hasActiveBookFilters();
     document.getElementById('books-clear-btn').style.display = hasFilters ? '' : 'none';
 
@@ -679,7 +375,7 @@ const App = {
     this.renderBookGrid();
   },
 
-  // detalhes do livro
+  // DETALHES DO LIVRO
 
   async openBook(bookId) {
     const book = State.allBooks.find(b => b.id === bookId);
@@ -688,7 +384,11 @@ const App = {
     State.reloadCallback = () => this.loadBooks();
     State.isEditingBook = false;
     State.bookEditCoverFile = null;
-    State.bookEditForm = { title: book.name, description: book.description || '', price: String(book.price), stock: String(book.stock), status: book.status, categoryId: book.category_id ?? '', author: '' };
+    State.bookEditForm = {
+      title: book.name, description: book.description || '',
+      price: String(book.price), stock: String(book.stock),
+      status: book.status, categoryId: book.category_id ?? '', author: '',
+    };
     State.bookEditErrors = {};
     this._showPage('page-book-detail');
     await this._renderBookDetail();
@@ -698,8 +398,8 @@ const App = {
     const book = State.selectedBook;
     const inAdmin = State.currentUser?.role === 'admin' && State.viewMode === 'admin';
     let authors = [];
-    try { authors = await apiFetch(`${API_BASE}/products/produtos/${book.id}/autores`); } catch { /* Se não tiver autores a gente segue a vida */ }
-    
+    try { authors = await apiFetch(`${API_BASE}/products/produtos/${book.id}/autores`); } catch { /* sem autores */ }
+
     if (!State.bookEditForm.author && authors.length) {
       State.bookEditForm.author = authors.map(a => a.name).join(', ');
     }
@@ -707,7 +407,7 @@ const App = {
     const el = document.getElementById('book-detail-content');
 
     if (State.isEditingBook && inAdmin) {
-      const f = State.bookEditForm; 
+      const f = State.bookEditForm;
       const e = State.bookEditErrors;
       el.innerHTML = `
         <div>
@@ -794,17 +494,17 @@ const App = {
     const book = State.selectedBook;
     const form = State.bookEditForm;
     const errors = runValidation(['title', 'price', 'stock', 'author'], form);
-    
-    if (Object.keys(errors).length) { 
-      State.bookEditErrors = errors; 
-      this._renderBookDetail(); 
-      return; 
+
+    if (Object.keys(errors).length) {
+      State.bookEditErrors = errors;
+      this._renderBookDetail();
+      return;
     }
 
     const finalStatus = deriveStatus(form.stock, form.status);
     const btn = document.getElementById('book-save-btn');
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
-    
+
     try {
       await apiFetch(`${API_BASE}/products/produtos/${book.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -825,11 +525,11 @@ const App = {
       State.allBooks = updatedList;
       const updated = updatedList.find(b => b.id === book.id);
       if (updated) State.selectedBook = updated;
-      
-      State.isEditingBook = false; 
-      State.bookEditCoverFile = null; 
+
+      State.isEditingBook = false;
+      State.bookEditCoverFile = null;
       State.bookEditErrors = {};
-      
+
       showToast(`"${form.title}" atualizado com sucesso!`, 'ok');
       this._renderBookDetail();
     } catch (err) {
@@ -849,7 +549,7 @@ const App = {
     });
   },
 
-  // gestão de usuários
+  // GESTÃO DE USUÁRIOS
 
   async loadUsers() {
     document.getElementById('users-loading').style.display = 'flex';
@@ -858,8 +558,8 @@ const App = {
     try {
       State.allUsers = await apiFetch(`${API_BASE}/users/clientes`);
       this.renderUserList();
-    } catch { 
-      // ignora
+    } catch {
+      // erro silencioso
     }
     document.getElementById('users-loading').style.display = 'none';
   },
@@ -948,7 +648,7 @@ const App = {
     this.renderUserList();
   },
 
-  // detalhes do usuario
+  // DETALHES DO USUÁRIO
 
   openUser(userId) {
     const user = State.allUsers.find(u => u.id === userId);
@@ -957,7 +657,11 @@ const App = {
     State.reloadCallback = () => this.loadUsers();
     State.isEditingUser = false;
     State.userEditErrors = {};
-    State.userEditForm = { name: user.name || '', email: user.email || '', phone: user.phone || '', role: user.role || 'client', street: user.street || '', number: '', neighborhood: '', city: user.city || '', state: '', zipCode: '' };
+    State.userEditForm = {
+      name: user.name || '', email: user.email || '', phone: user.phone || '',
+      role: user.role || 'client', street: user.street || '', number: '',
+      neighborhood: '', city: user.city || '', state: '', zipCode: '',
+    };
     this._renderUserDetail();
     this._showPage('page-user-detail');
   },
@@ -967,7 +671,7 @@ const App = {
     const f = State.userEditForm;
     const e = State.userEditErrors;
     const el = document.getElementById('user-detail-content');
-    
+
     el.innerHTML = `
       <div class="ud-avatar">${user.name?.charAt(0).toUpperCase()}</div>
       <h1 class="ud-title">${escapeHtml(user.name)}</h1>
@@ -1003,6 +707,7 @@ const App = {
           <button class="btn-lib btn-danger-lib" onclick="App.confirmDeleteUser()">Remover</button>
         `}
       </div>`;
+
     if (State.isEditingUser) this._bindForm(el, State.userEditForm, State.userEditErrors);
   },
 
@@ -1013,19 +718,18 @@ const App = {
     const form = State.userEditForm;
     const errors = runValidation(['name', 'email', 'phone'], form);
     if (Object.keys(errors).length) { State.userEditErrors = errors; this._renderUserDetail(); return; }
-    
+
     const btn = document.getElementById('user-save-btn');
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
-    
+
     try {
       await apiFetch(`${API_BASE}/users/clientes/${State.selectedUser.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: form.name.trim(), email: form.email.trim(), telefone: form.phone, role: form.role, rua: form.street, numero: form.number, bairro: form.neighborhood, cidade: form.city, estado: form.state, cep: form.zipCode }),
       });
       State.selectedUser = { ...State.selectedUser, name: form.name.trim(), email: form.email.trim(), phone: form.phone, role: form.role, street: form.street, city: form.city };
-      State.isEditingUser = false; 
+      State.isEditingUser = false;
       State.userEditErrors = {};
-      
       showToast(`"${form.name}" atualizado com sucesso!`, 'ok');
       this._renderUserDetail();
     } catch (err) {
@@ -1045,10 +749,10 @@ const App = {
     });
   },
 
-  // cadastro do novo livro
+  // CADASTRO DE NOVO LIVRO
 
   _renderCreateBook() {
-    const f = State.newBookForm; 
+    const f = State.newBookForm;
     const e = State.newBookFormErrors;
     document.getElementById('create-book-form').innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
@@ -1081,11 +785,11 @@ const App = {
     const form = State.newBookForm;
     const errors = runValidation(['title', 'price', 'stock', 'author'], form);
     if (Object.keys(errors).length) { State.newBookFormErrors = errors; this._renderCreateBook(); return; }
-    
+
     const finalStatus = deriveStatus(form.stock, form.status);
     const btn = document.getElementById('create-book-btn');
     btn.disabled = true; btn.textContent = '…';
-    
+
     try {
       await apiFetch(`${API_BASE}/products/produtos`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1094,10 +798,13 @@ const App = {
       const updatedList = await apiFetch(`${API_BASE}/products/produtos`);
       State.allBooks = updatedList;
       const created = updatedList.find(b => b.name === form.title.trim());
-      
+
       if (created) {
         if (form.author.trim()) {
-          await apiFetch(`${API_BASE}/products/autores`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: form.author.trim(), productId: created.id }) });
+          await apiFetch(`${API_BASE}/products/autores`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome: form.author.trim(), productId: created.id }),
+          });
         }
         if (State.newBookCoverFile) {
           const fd = new FormData(); fd.append('cover', State.newBookCoverFile);
@@ -1107,17 +814,17 @@ const App = {
       showToast(`"${form.title}" cadastrado com sucesso!`, 'ok');
       this.goList();
       this.renderBookGrid();
-    } catch (err) { 
-      showToast(err.message, 'error'); 
-      btn.disabled = false; 
-      btn.textContent = 'Cadastrar livro'; 
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Cadastrar livro';
     }
   },
 
-  // cadastro de novo usuário
+  // CADASTRO DE NOVO USUÁRIO
 
   _renderCreateUser() {
-    const f = State.newUserForm; 
+    const f = State.newUserForm;
     const e = State.newUserFormErrors;
     document.getElementById('create-user-form').innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
@@ -1141,10 +848,10 @@ const App = {
     const form = State.newUserForm;
     const errors = runValidation(['name', 'email', 'password', 'phone', 'street', 'city', 'state', 'zipCode'], form);
     if (Object.keys(errors).length) { State.newUserFormErrors = errors; this._renderCreateUser(); return; }
-    
+
     const btn = document.getElementById('create-user-btn');
     btn.disabled = true; btn.textContent = '…';
-    
+
     try {
       await apiFetch(`${API_BASE}/users/clientes`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1157,14 +864,14 @@ const App = {
       showToast(`"${form.name}" cadastrado com sucesso!`, 'ok');
       this.goList();
       this.loadUsers();
-    } catch (err) { 
-      showToast(err.message, 'error'); 
-      btn.disabled = false; 
-      btn.textContent = 'Cadastrar usuário'; 
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Cadastrar usuário';
     }
   },
 
-  // Sincronização Dinâmica dos Formulários
+  // SINCRONIZAÇÃO DINÂMICA DOS FORMULÁRIOS
 
   // fica de olho no que o usuário digita para atualizar o objeto e já limpar os erros.
   _bindForm(container, formObject, errorsObject) {
@@ -1200,44 +907,11 @@ const App = {
     });
   },
 
-  // funções vazias para evitar erros no HTML onde estão sendo chamadas diretamente
-  handleInput(input) {},
-  blurInput(input) {},
+  // stubs para evitar erros em handlers inline do HTML
+  handleInput(_input) {},
+  blurInput(_input) {},
 
-  // função dos modais
-  
-  confirmYes() {
-    document.getElementById('confirm-overlay').classList.remove('open');
-    confirmCallback?.();
-    confirmCallback = null;
-  },
-  
-  confirmNo() {
-    document.getElementById('confirm-overlay').classList.remove('open');
-    confirmCallback = null;
-  },
+  // delegação das ações dos modais (chamadas de state.js)
+  confirmYes,
+  confirmNo,
 };
-
-// EVENTOS GLOBAIS E INICIALIZAÇÃO
-
-document.addEventListener('click', event => {
-  const chipWrap = document.getElementById('user-chip-wrap');
-  if (chipWrap && !chipWrap.contains(event.target))
-    document.getElementById('chip-dd')?.classList.remove('open');
-
-  const drawer = document.getElementById('mobile-nav-drawer');
-  const hamburger = document.getElementById('hamburger-btn');
-  if (drawer && hamburger && !drawer.contains(event.target) && !hamburger.contains(event.target))
-    drawer.classList.remove('open');
-});
-
-// dá enter pra logar
-document.addEventListener('keydown', event => {
-  if (event.key !== 'Enter') return;
-  const loginBtn = document.getElementById('login-submit-btn');
-  if (loginBtn && !loginBtn.disabled) loginBtn.click();
-});
-
-// inicializa
-App.init();
-window.App = App;
