@@ -9,31 +9,31 @@ const ROLE_LABELS = { client: 'Cliente', admin: 'Administrador' };
 
 // VALIDAÇÃO DE DADOS
 const VALIDATORS = {
-  name: (v) => {
-    const text = v?.trim();
+  name: (value) => {
+    const text = value?.trim();
     if (!text) return 'Nome é obrigatório';
     if (text.length < 2) return 'Mín. 2 caracteres';
     if (text.length > 255) return 'Máx. 255 caracteres';
     return null;
   },
 
-  title: (v) => {
-    const text = v?.trim();
+  title: (value) => {
+    const text = value?.trim();
     if (!text) return 'Título é obrigatório';
     if (text.length > 255) return 'Máx. 255 caracteres';
     return null;
   },
 
-  author: (v) => {
-    const text = v?.trim();
+  author: (value) => {
+    const text = value?.trim();
     if (!text) return 'Autor é obrigatório';
     if (text.length < 2) return 'Mín. 2 caracteres';
     if (text.length > 255) return 'Máx. 255 caracteres';
     return null;
   },
 
-  email: (v) => {
-    const text = v?.trim();
+  email: (value) => {
+    const text = value?.trim();
     if (!text) return 'E-mail é obrigatório';
     
     // regex significa expressão regular, nesse caso, é usada pra validar emails (achei na internet)
@@ -43,37 +43,37 @@ const VALIDATORS = {
     return null;
   },
 
-  password: (v) => {
-    if (!v) return 'Senha é obrigatória';
-    if (v.length < 4) return 'Mín. 4 caracteres';
-    if (v.length > 255) return 'Máx. 255 caracteres';
+  password: (value) => {
+    if (!value) return 'Senha é obrigatória';
+    if (value.length < 4) return 'Mín. 4 caracteres';
+    if (value.length > 255) return 'Máx. 255 caracteres';
     return null;
   },
 
-  phone: (v) => {
-    if (!v?.trim()) return null; // telefone é opcional
+  phone: (value) => {
+    if (!value?.trim()) return null; // telefone é opcional
     
-    const digits = v.replace(/\D/g, ''); // remove oq nao é numero
+    const digits = value.replace(/\D/g, ''); // remove oq nao é numero
     if (digits.length > 0 && digits.length < 10) return 'Mín. 10 dígitos';
     if (digits.length > 15) return 'Número muito longo';
     
     return null;
   },
 
-  price: (v) => {
-    if (v === '' || v == null) return 'Preço é obrigatório';
+  price: (value) => {
+    if (value === '' || value == null) return 'Preço é obrigatório';
     
-    const num = Number(v);
+    const num = Number(value);
     if (isNaN(num)) return 'Deve ser um número';
     if (num < 0) return 'Não pode ser negativo';
     
     return null;
   },
 
-  stock: (v) => {
-    if (v === '' || v == null) return 'Estoque é obrigatório';
+  stock: (value) => {
+    if (value === '' || value == null) return 'Estoque é obrigatório';
     
-    const num = Number(v);
+    const num = Number(value);
     if (isNaN(num) || !Number.isInteger(num)) return 'Deve ser número inteiro';
     if (num < 0) return 'Não pode ser negativo';
     
@@ -81,10 +81,10 @@ const VALIDATORS = {
   },
 
 
-  street: (v) => !v?.trim() ? 'Rua é obrigatória' : null,
-  city: (v) => !v?.trim() ? 'Cidade é obrigatória' : null,
-  state: (v) => !v?.trim() ? 'Estado é obrigatório' : null,
-  zipCode: (v) => !v?.trim() ? 'CEP é obrigatório' : null,
+  street: (value) => !value?.trim() ? 'Rua é obrigatória' : null,
+  city: (value) => !value?.trim() ? 'Cidade é obrigatória' : null,
+  state: (value) => !value?.trim() ? 'Estado é obrigatório' : null,
+  zipCode: (value) => !value?.trim() ? 'CEP é obrigatório' : null,
 };
 
 // roda a validação em um grupo de campos do formulário e devolve os erros.
@@ -164,9 +164,9 @@ function buildField({ label, name, type = 'text', value = '', placeholder = '', 
   return `
     <div style="${spanStyle}">
       <label class="field-label ${labelClass}">${label}${required ? '<span class="required-star"> *</span>' : ''}</label>
-      ${error ? `<p class="field-error">⚠ ${error}</p>` : ''}
+      ${error ? `<page class="field-error">⚠ ${error}</page>` : ''}
       ${inputHtml}
-      ${hint && !error ? `<p class="field-hint">${hint}</p>` : ''}
+      ${hint && !error ? `<page class="field-hint">${hint}</page>` : ''}
     </div>`;
 }
 
@@ -174,7 +174,7 @@ function buildField({ label, name, type = 'text', value = '', placeholder = '', 
 function addressFieldsHtml(form = {}, errors = {}) {
   return `
     <div class="form-section-divider">
-      <p class="form-section-title">Endereço</p>
+      <page class="form-section-title">Endereço</page>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
         ${buildField({ label: 'Rua', name: 'street', value: form.street, placeholder: 'Rua das Flores', required: true, error: errors.street, colSpan: 2 })}
         ${buildField({ label: 'Número', name: 'number', value: form.number, placeholder: '123' })}
@@ -191,7 +191,7 @@ function buildPaginationHtml(currentPage, totalPages, callbackName) {
   if (totalPages <= 1) return '';
   const range = [1];
   if (currentPage > 3) range.push('…');
-  for (let p = Math.max(2, currentPage - 1); p <= Math.min(totalPages - 1, currentPage + 1); p++) range.push(p);
+  for (let page = Math.max(2, currentPage - 1); page <= Math.min(totalPages - 1, currentPage + 1); page++) range.push(page);
   if (currentPage < totalPages - 2) range.push('…');
   if (totalPages > 1) range.push(totalPages);
 
@@ -314,7 +314,7 @@ const App = {
         State.viewMode = State.currentUser.role === 'admin' ? 'admin' : 'client';
       }
     } catch { 
-      // se tiver corrompido, ignora e pede login de novo
+      // erro
     }
 
     State.currentUser ? this.showApp() : this.showLogin('login');
@@ -360,7 +360,7 @@ const App = {
   async submitLogin(mode) {
     const box = document.getElementById('login-box');
     const formData = {};
-    box.querySelectorAll('[name]').forEach(inp => { formData[inp.name] = inp.value; });
+    box.querySelectorAll('[name]').forEach(input => { formData[input.name] = input.value; });
 
     const fields = mode === 'login'
       ? ['email', 'password']
@@ -369,17 +369,17 @@ const App = {
     const errors = runValidation(fields, formData);
     if (Object.keys(errors).length) {
       fields.forEach(field => {
-        const inp = box.querySelector(`[name="${field}"]`);
-        if (!inp) return;
-        const parent = inp.closest('div');
+        const input = box.querySelector(`[name="${field}"]`);
+        if (!input) return;
+        const parent = input.closest('div');
         parent.querySelector('.field-error')?.remove();
         if (errors[field]) {
-          inp.classList.add('err');
+          input.classList.add('err');
           parent.querySelector('.field-label')?.classList.add('error');
-          const errEl = document.createElement('p');
+          const errEl = document.createElement('page');
           errEl.className = 'field-error';
           errEl.textContent = '⚠ ' + errors[field];
-          inp.before(errEl);
+          input.before(errEl);
         }
       });
       return;
@@ -508,7 +508,7 @@ const App = {
   // navegação entre páginas internas (estilo SPA)
 
   _showPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
@@ -558,7 +558,7 @@ const App = {
       State.allBooks = await apiFetch(`${API_BASE}/products/produtos`);
       this.renderBookGrid();
     } catch { 
-      // ignorando erro calado; se algo falhar muito feio o usuário nota ou mostramos no toast
+      // erro
     }
     document.getElementById('books-loading').style.display = 'none';
   },
@@ -642,8 +642,8 @@ const App = {
       <div class="book-card" style="animation-delay:${index * .03}s;opacity:${book.status === 'inactive' && !inAdmin ? .4 : 1}" onclick="App.openBook(${book.id})">
         <div class="book-card-img">${coverHtml(book.cover_image, 90)}</div>
         <div class="book-card-body">
-          <p class="book-card-title" title="${escapeHtml(book.name)}">${escapeHtml(book.name)}</p>
-          <p class="book-card-price" style="color:${Number(book.price) === 0 ? 'var(--blue)' : 'var(--accent)'}">${formatPrice(book.price)}</p>
+          <page class="book-card-title" title="${escapeHtml(book.name)}">${escapeHtml(book.name)}</page>
+          <page class="book-card-price" style="color:${Number(book.price) === 0 ? 'var(--blue)' : 'var(--accent)'}">${formatPrice(book.price)}</page>
           <div class="book-card-footer">
             <span class="book-card-stock">${book.stock} unidade${book.stock > 1 || book.stock < 1 ? "s" : ""}</span>
             ${tagHtml(STATUS_LABELS[book.status] ?? book.status, STATUS_COLORS[book.status] ?? '#888')}
@@ -742,9 +742,9 @@ const App = {
       el.innerHTML = `
         <div>${coverHtml(book.cover_image, 180)}</div>
         <div>
-          <p class="detail-author">${authors.map(a => escapeHtml(a.name)).join(', ') || 'Autor desconhecido'}</p>
+          <page class="detail-author">${authors.map(a => escapeHtml(a.name)).join(', ') || 'Autor desconhecido'}</page>
           <h1 class="detail-title">${escapeHtml(book.name)}</h1>
-          ${book.description ? `<p class="detail-desc">${escapeHtml(book.description)}</p>` : ''}
+          ${book.description ? `<page class="detail-desc">${escapeHtml(book.description)}</page>` : ''}
           <div style="display:flex;gap:24px;margin-bottom:20px;flex-wrap:wrap;align-items:baseline">
             <div>
               <div class="detail-stat-label">Preço</div>
@@ -916,8 +916,8 @@ const App = {
       <div class="user-row" style="animation-delay:${index * .03}s" onclick="App.openUser(${user.id})">
         <div class="user-avatar-sm">${user.name?.charAt(0).toUpperCase()}</div>
         <div style="min-width:0">
-          <p class="user-name">${escapeHtml(user.name)}</p>
-          <p class="user-email">${escapeHtml(user.email)}</p>
+          <page class="user-name">${escapeHtml(user.name)}</page>
+          <page class="user-email">${escapeHtml(user.email)}</page>
         </div>
         ${tagHtml(ROLE_LABELS[user.role] ?? user.role, user.role === 'admin' ? 'var(--orange)' : 'var(--blue)')}
       </div>`).join('');
