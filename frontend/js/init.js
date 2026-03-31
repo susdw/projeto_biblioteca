@@ -1,7 +1,6 @@
 // Ponto de entrada: eventos globais e inicialização
 
 import { App } from './app.js';
-import { confirmYes, confirmNo } from './state.js';
 
 // expõe App globalmente (necessário para os handlers onclick inline no HTML)
 window.App = App;
@@ -24,10 +23,6 @@ document.addEventListener('keydown', event => {
   const loginBtn = document.getElementById('login-submit-btn');
   if (loginBtn && !loginBtn.disabled) loginBtn.click();
 });
-
-// expõe as funções do modal de confirmação globalmente
-window.confirmYes = confirmYes;
-window.confirmNo = confirmNo;
 
 // inicializa o app
 App.init();

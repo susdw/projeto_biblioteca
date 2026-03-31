@@ -9,7 +9,7 @@ export async function apiFetch(url, options = {}) {
     if (!response.ok) throw new Error(data.error || response.statusText);
     return data;
   } catch (err) {
-    if (err.message.includes('JSON')) throw new Error(`Erro do servidor (${response.status})`);
+    if (err instanceof SyntaxError) throw new Error(`Erro do servidor (${response.status})`);
     throw err;
   }
 }

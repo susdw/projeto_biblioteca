@@ -2,43 +2,52 @@
 
 // ESTADO GLOBAL
 
-// guarda o estado atual do app: conta logada, página atual, etc.
+export const VIEW_MODE  = { CLIENT: 'client',  ADMIN: 'admin'       };
+export const ACTIVE_TAB = { LIVROS: 'livros',  USUARIOS: 'usuarios' };
+
 export const State = {
-  currentUser: null,
-  viewMode: 'client', // 'admin' ou 'client'
-  activeTab: 'livros', // 'livros' ou 'usuarios'
 
-  allBooks: [],
-  allUsers: [],
-  selectedBook: null,
-  selectedUser: null,
+  // autenticação e navegação
+  auth: {
+    currentUser: null,
+    viewMode: VIEW_MODE.CLIENT,
+    activeTab: ACTIVE_TAB.LIVROS,
+  },
+
+  // dados e UI de livros
+  books: {
+    all: [],
+    selected: null,
+    page: 1,
+    perPage: 12,
+
+    isEditing: false,
+    editForm: { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' },
+    editErrors: {},
+    editCoverFile: null,
+
+    newForm: { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' },
+    newFormErrors: {},
+    newCoverFile: null,
+  },
+
+  // dados e UI de usuários
+  users: {
+    all: [],
+    selected: null,
+    page: 1,
+    perPage: 10,
+
+    isEditing: false,
+    editForm: { name: '', email: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
+    editErrors: {},
+
+    newForm: { name: '', email: '', password: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
+    newFormErrors: {},
+  },
+
+  // callback chamado após deletar um livro/usuário para recarregar a lista
   reloadCallback: null,
-
-  // controle de paginação
-  booksPage: 1,
-  booksPerPage: 12,
-  usersPage: 1,
-  usersPerPage: 10,
-
-  // formulário de edição de livro (usado na tela de detalhes)
-  bookEditForm: { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' },
-  bookEditErrors: {},
-  bookEditCoverFile: null,
-  isEditingBook: false,
-
-  // formulário de edição de usuário
-  userEditForm: { name: '', email: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
-  userEditErrors: {},
-  isEditingUser: false,
-
-  // cadastro de novo livro
-  newBookForm: { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' },
-  newBookFormErrors: {},
-  newBookCoverFile: null,
-
-  // cadastro de novo usuário
-  newUserForm: { name: '', email: '', password: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
-  newUserFormErrors: {},
 };
 
 // TOAST (notificação)

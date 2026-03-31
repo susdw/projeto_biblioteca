@@ -5,7 +5,7 @@ import { runValidation } from './validators.js';
 import { formatPrice, deriveStatus, escapeHtml } from './helpers.js';
 import { tagHtml, coverHtml, buildField, addressFieldsHtml, buildPaginationHtml } from './ui.js';
 import { apiFetch, mapBookFormToApi } from './api.js';
-import { State, showToast, showConfirm, confirmYes, confirmNo } from './state.js';
+import { State, VIEW_MODE, ACTIVE_TAB, showToast, showConfirm, confirmYes, confirmNo } from './state.js';
 
 export const App = {
 
@@ -14,13 +14,13 @@ export const App = {
     try {
       const saved = localStorage.getItem(SESSION_KEY);
       if (saved) {
-        State.currentUser = JSON.parse(saved);
-        State.viewMode = State.currentUser.role === 'admin' ? 'admin' : 'client';
+        State.auth.currentUser = JSON.parse(saved);
+        State.auth.viewMode = State.auth.currentUser.role === 'admin' ? VIEW_MODE.ADMIN : VIEW_MODE.CLIENT;
       }
     } catch {
       // erro silencioso
     }
-    State.currentUser ? this.showApp() : this.showLogin('login');
+    State.auth.currentUser ? this.showApp() : this.showLogin('login');
   },
 
   // LOGIN E CADASTRO
@@ -78,7 +78,7 @@ export const App = {
         if (errors[field]) {
           input.classList.add('err');
           parent.querySelector('.field-label')?.classList.add('error');
-          const errEl = document.createElement('page');
+          const errEl = document.createElement('span');
           errEl.className = 'field-error';
           errEl.textContent = '⚠ ' + errors[field];
           input.before(errEl);
@@ -96,8 +96,8 @@ export const App = {
           body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
         });
         localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-        State.currentUser = user;
-        State.viewMode = user.role === 'admin' ? 'admin' : 'client';
+        State.auth.currentUser = user;
+        State.auth.viewMode = user.role === 'admin' ? VIEW_MODE.ADMIN : VIEW_MODE.CLIENT;
         this.showApp();
       } else {
         await apiFetch(`${API_BASE}/users/clientes`, {
@@ -126,7 +126,7 @@ export const App = {
 
   logout() {
     localStorage.removeItem(SESSION_KEY);
-    State.currentUser = null; State.viewMode = 'client';
+    State.auth.currentUser = null; State.auth.viewMode = VIEW_MODE.CLIENT;
     this.showLogin('login');
   },
 
@@ -141,9 +141,9 @@ export const App = {
   },
 
   _renderHeader() {
-    const user = State.currentUser;
+    const user = State.auth.currentUser;
     const isAdmin = user.role === 'admin';
-    const inAdmin = isAdmin && State.viewMode === 'admin';
+    const inAdmin = isAdmin && State.auth.viewMode === VIEW_MODE.ADMIN;
 
     document.getElementById('admin-badge').style.display = inAdmin ? '' : 'none';
     document.getElementById('main-nav').style.display = inAdmin ? '' : 'none';
@@ -170,9 +170,9 @@ export const App = {
       btn.onclick = () => {
         document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        State.activeTab = btn.dataset.tab;
+        State.auth.activeTab = btn.dataset.tab;
         this.goList();
-        State.activeTab === 'livros' ? this.loadBooks() : this.loadUsers();
+        State.auth.activeTab === ACTIVE_TAB.LIVROS ? this.loadBooks() : this.loadUsers();
       };
     });
 
@@ -181,10 +181,10 @@ export const App = {
         document.querySelectorAll('.nav-tab-mobile').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === btn.dataset.tab));
         btn.classList.add('active');
-        State.activeTab = btn.dataset.tab;
+        State.auth.activeTab = btn.dataset.tab;
         document.getElementById('mobile-nav-drawer').classList.remove('open');
         this.goList();
-        State.activeTab === 'livros' ? this.loadBooks() : this.loadUsers();
+        State.auth.activeTab === ACTIVE_TAB.LIVROS ? this.loadBooks() : this.loadUsers();
       };
     });
   },
@@ -194,11 +194,11 @@ export const App = {
   },
 
   toggleViewMode() {
-    State.viewMode = State.viewMode === 'admin' ? 'client' : 'admin';
-    State.activeTab = 'livros';
+    State.auth.viewMode = State.auth.viewMode === VIEW_MODE.ADMIN ? VIEW_MODE.CLIENT : VIEW_MODE.ADMIN;
+    State.auth.activeTab = ACTIVE_TAB.LIVROS;
     document.getElementById('chip-dd')?.classList.remove('open');
     document.querySelectorAll('.nav-tab').forEach(b => {
-      b.classList.toggle('active', b.dataset.tab === 'livros');
+      b.classList.toggle('active', b.dataset.tab === ACTIVE_TAB.LIVROS);
     });
     this._renderHeader();
     this.goList();
@@ -215,12 +215,12 @@ export const App = {
 
   goList() {
     this._showPage('page-list');
-    const inAdmin = State.currentUser?.role === 'admin' && State.viewMode === 'admin';
+    const inAdmin = State.auth.currentUser?.role === 'admin' && State.auth.viewMode === VIEW_MODE.ADMIN;
 
     document.getElementById('books-section').style.display =
-      (State.viewMode === 'client' || State.activeTab === 'livros') ? '' : 'none';
+      (State.auth.viewMode === VIEW_MODE.CLIENT || State.auth.activeTab === ACTIVE_TAB.LIVROS) ? '' : 'none';
     document.getElementById('users-section').style.display =
-      (inAdmin && State.activeTab === 'usuarios') ? '' : 'none';
+      (inAdmin && State.auth.activeTab === ACTIVE_TAB.USUARIOS) ? '' : 'none';
 
     const statusFilter = document.getElementById('books-status-filter');
     if (statusFilter) statusFilter.style.display = inAdmin ? '' : 'none';
@@ -232,15 +232,15 @@ export const App = {
   },
 
   goCreate(section) {
-    if (section === 'livros') {
-      State.newBookForm = { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' };
-      State.newBookFormErrors = {};
-      State.newBookCoverFile = null;
+    if (section === ACTIVE_TAB.LIVROS) {
+      State.books.newForm = { title: '', description: '', price: '', stock: '', status: 'active', categoryId: '', author: '' };
+      State.books.newFormErrors = {};
+      State.books.newCoverFile = null;
       this._renderCreateBook();
       this._showPage('page-create-book');
     } else {
-      State.newUserForm = { name: '', email: '', password: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' };
-      State.newUserFormErrors = {};
+      State.users.newForm = { name: '', email: '', password: '', phone: '', role: 'client', street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' };
+      State.users.newFormErrors = {};
       this._renderCreateUser();
       this._showPage('page-create-user');
     }
@@ -253,7 +253,7 @@ export const App = {
     document.getElementById('books-grid').style.display = 'none';
     document.getElementById('books-empty').style.display = 'none';
     try {
-      State.allBooks = await apiFetch(`${API_BASE}/products/produtos`);
+      State.books.all = await apiFetch(`${API_BASE}/products/produtos`);
       this.renderBookGrid();
     } catch {
       // erro silencioso
@@ -273,7 +273,7 @@ export const App = {
 
   _applyBookFilters(books) {
     const { search, status, minPrice, maxPrice, sortBy } = this._getBookFilters();
-    const inAdmin = State.currentUser?.role === 'admin' && State.viewMode === 'admin';
+    const inAdmin = State.auth.currentUser?.role === 'admin' && State.auth.viewMode === VIEW_MODE.ADMIN;
 
     let result = books.filter(book => {
       if (!inAdmin && book.status !== 'active') return false;
@@ -300,13 +300,13 @@ export const App = {
   },
 
   renderBookGrid() {
-    const filtered = this._applyBookFilters(State.allBooks);
+    const filtered = this._applyBookFilters(State.books.all);
     const total = filtered.length;
-    const totalPages = Math.max(1, Math.ceil(total / State.booksPerPage));
-    if (State.booksPage > totalPages) State.booksPage = totalPages;
+    const totalPages = Math.max(1, Math.ceil(total / State.books.perPage));
+    if (State.books.page > totalPages) State.books.page = totalPages;
 
-    const start = (State.booksPage - 1) * State.booksPerPage;
-    const pageItems = filtered.slice(start, start + State.booksPerPage);
+    const start = (State.books.page - 1) * State.books.perPage;
+    const pageItems = filtered.slice(start, start + State.books.perPage);
 
     const gridEl = document.getElementById('books-grid');
     const emptyEl = document.getElementById('books-empty');
@@ -332,14 +332,14 @@ export const App = {
 
     emptyEl.style.display = 'none';
     gridEl.style.display = '';
-    const inAdmin = State.currentUser?.role === 'admin' && State.viewMode === 'admin';
+    const inAdmin = State.auth.currentUser?.role === 'admin' && State.auth.viewMode === VIEW_MODE.ADMIN;
 
     gridEl.innerHTML = pageItems.map((book, index) => `
       <div class="book-card" style="animation-delay:${index * .03}s;opacity:${book.status === 'inactive' && !inAdmin ? .4 : 1}" onclick="App.openBook(${book.id})">
         <div class="book-card-img">${coverHtml(book.cover_image, 90)}</div>
         <div class="book-card-body">
-          <page class="book-card-title" title="${escapeHtml(book.name)}">${escapeHtml(book.name)}</page>
-          <page class="book-card-price" style="color:${Number(book.price) === 0 ? 'var(--blue)' : 'var(--accent)'}">${formatPrice(book.price)}</page>
+          <span class="book-card-title" title="${escapeHtml(book.name)}">${escapeHtml(book.name)}</span>
+          <span class="book-card-price" style="color:${Number(book.price) === 0 ? 'var(--blue)' : 'var(--accent)'}">${formatPrice(book.price)}</span>
           <div class="book-card-footer">
             <span class="book-card-stock">${book.stock} unidade${book.stock > 1 || book.stock < 1 ? "s" : ""}</span>
             ${tagHtml(STATUS_LABELS[book.status] ?? book.status, STATUS_COLORS[book.status] ?? '#888')}
@@ -347,7 +347,7 @@ export const App = {
         </div>
       </div>`).join('');
 
-    paginationEl.innerHTML = buildPaginationHtml(State.booksPage, totalPages, 'App.goBooksPage');
+    paginationEl.innerHTML = buildPaginationHtml(State.books.page, totalPages, 'App.goBooksPage');
   },
 
   _hasActiveBookFilters() {
@@ -355,15 +355,15 @@ export const App = {
     return !!(f.search || f.status || f.minPrice || f.maxPrice || f.sortBy !== 'name_asc');
   },
 
-  onBookFilterChange() { State.booksPage = 1; this.renderBookGrid(); },
+  onBookFilterChange() { State.books.page = 1; this.renderBookGrid(); },
 
   goBooksPage(page) {
-    State.booksPage = page;
+    State.books.page = page;
     this.renderBookGrid();
     document.getElementById('books-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
 
-  updateBooksPerPage(value) { State.booksPerPage = Number(value); State.booksPage = 1; this.renderBookGrid(); },
+  updateBooksPerPage(value) { State.books.perPage = Number(value); State.books.page = 1; this.renderBookGrid(); },
 
   clearBookFilters() {
     ['books-search', 'books-author-filter', 'books-status-filter', 'books-min-price', 'books-max-price'].forEach(id => {
@@ -371,50 +371,50 @@ export const App = {
     });
     const sortEl = document.getElementById('books-sort');
     if (sortEl) sortEl.value = 'name_asc';
-    State.booksPage = 1;
+    State.books.page = 1;
     this.renderBookGrid();
   },
 
   // DETALHES DO LIVRO
 
   async openBook(bookId) {
-    const book = State.allBooks.find(b => b.id === bookId);
+    const book = State.books.all.find(b => b.id === bookId);
     if (!book) return;
-    State.selectedBook = book;
+    State.books.selected = book;
     State.reloadCallback = () => this.loadBooks();
-    State.isEditingBook = false;
-    State.bookEditCoverFile = null;
-    State.bookEditForm = {
+    State.books.isEditing = false;
+    State.books.editCoverFile = null;
+    State.books.editForm = {
       title: book.name, description: book.description || '',
       price: String(book.price), stock: String(book.stock),
       status: book.status, categoryId: book.category_id ?? '', author: '',
     };
-    State.bookEditErrors = {};
+    State.books.editErrors = {};
     this._showPage('page-book-detail');
     await this._renderBookDetail();
   },
 
   async _renderBookDetail() {
-    const book = State.selectedBook;
-    const inAdmin = State.currentUser?.role === 'admin' && State.viewMode === 'admin';
+    const book = State.books.selected;
+    const inAdmin = State.auth.currentUser?.role === 'admin' && State.auth.viewMode === VIEW_MODE.ADMIN;
     let authors = [];
     try { authors = await apiFetch(`${API_BASE}/products/produtos/${book.id}/autores`); } catch { /* sem autores */ }
 
-    if (!State.bookEditForm.author && authors.length) {
-      State.bookEditForm.author = authors.map(a => a.name).join(', ');
+    if (!State.books.editForm.author && authors.length) {
+      State.books.editForm.author = authors.map(a => a.name).join(', ');
     }
 
     const el = document.getElementById('book-detail-content');
 
-    if (State.isEditingBook && inAdmin) {
-      const f = State.bookEditForm;
-      const e = State.bookEditErrors;
+    if (State.books.isEditing && inAdmin) {
+      const f = State.books.editForm;
+      const e = State.books.editErrors;
       el.innerHTML = `
         <div>
           ${coverHtml(book.cover_image, 180)}
-          <label class="cover-upload-label ${State.bookEditCoverFile ? 'has-file' : ''}" id="cover-upload-lbl">
+          <label class="cover-upload-label ${State.books.editCoverFile ? 'has-file' : ''}" id="cover-upload-lbl">
             <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="App.onCoverPick(this,'edit')">
-            ${State.bookEditCoverFile ? `✓ ${State.bookEditCoverFile.name}` : '+ Nova capa'}
+            ${State.books.editCoverFile ? `✓ ${State.books.editCoverFile.name}` : '+ Nova capa'}
           </label>
         </div>
         <div>
@@ -436,15 +436,15 @@ export const App = {
             <button class="btn-lib btn-ghost-lib" onclick="App.cancelBookEdit()">Cancelar</button>
           </div>
         </div>`;
-      this._bindForm(el, State.bookEditForm, State.bookEditErrors);
+      this._bindForm(el, State.books.editForm, State.books.editErrors);
     } else {
       const canBuy = book.status === 'active' && book.stock > 0;
       el.innerHTML = `
         <div>${coverHtml(book.cover_image, 180)}</div>
         <div>
-          <page class="detail-author">${authors.map(a => escapeHtml(a.name)).join(', ') || 'Autor desconhecido'}</page>
+          <span class="detail-author">${authors.map(a => escapeHtml(a.name)).join(', ') || 'Autor desconhecido'}</span>
           <h1 class="detail-title">${escapeHtml(book.name)}</h1>
-          ${book.description ? `<page class="detail-desc">${escapeHtml(book.description)}</page>` : ''}
+          ${book.description ? `<span class="detail-desc">${escapeHtml(book.description)}</span>` : ''}
           <div style="display:flex;gap:24px;margin-bottom:20px;flex-wrap:wrap;align-items:baseline">
             <div>
               <div class="detail-stat-label">Preço</div>
@@ -477,26 +477,26 @@ export const App = {
     const file = input.files[0];
     if (!file) return;
     if (context === 'edit') {
-      State.bookEditCoverFile = file;
+      State.books.editCoverFile = file;
       const lbl = document.getElementById('cover-upload-lbl');
       if (lbl) { lbl.classList.add('has-file'); lbl.childNodes[lbl.childNodes.length - 1].textContent = `✓ ${file.name}`; }
     } else {
-      State.newBookCoverFile = file;
+      State.books.newCoverFile = file;
       const lbl = document.getElementById('new-cover-lbl');
       if (lbl) { lbl.classList.add('has-file'); lbl.querySelector('span').textContent = `✓ ${file.name}`; }
     }
   },
 
-  startBookEdit() { State.isEditingBook = true; this._renderBookDetail(); },
-  cancelBookEdit() { State.isEditingBook = false; State.bookEditCoverFile = null; this._renderBookDetail(); },
+  startBookEdit() { State.books.isEditing = true; this._renderBookDetail(); },
+  cancelBookEdit() { State.books.isEditing = false; State.books.editCoverFile = null; this._renderBookDetail(); },
 
   async saveBook() {
-    const book = State.selectedBook;
-    const form = State.bookEditForm;
+    const book = State.books.selected;
+    const form = State.books.editForm;
     const errors = runValidation(['title', 'price', 'stock', 'author'], form);
 
     if (Object.keys(errors).length) {
-      State.bookEditErrors = errors;
+      State.books.editErrors = errors;
       this._renderBookDetail();
       return;
     }
@@ -516,19 +516,19 @@ export const App = {
           body: JSON.stringify({ nome: form.author.trim(), productId: book.id }),
         });
       }
-      if (State.bookEditCoverFile) {
-        const fd = new FormData(); fd.append('cover', State.bookEditCoverFile);
+      if (State.books.editCoverFile) {
+        const fd = new FormData(); fd.append('cover', State.books.editCoverFile);
         await fetch(`${API_BASE}/products/produtos/${book.id}/cover`, { method: 'PUT', body: fd });
       }
 
       const updatedList = await apiFetch(`${API_BASE}/products/produtos`);
-      State.allBooks = updatedList;
+      State.books.all = updatedList;
       const updated = updatedList.find(b => b.id === book.id);
-      if (updated) State.selectedBook = updated;
+      if (updated) State.books.selected = updated;
 
-      State.isEditingBook = false;
-      State.bookEditCoverFile = null;
-      State.bookEditErrors = {};
+      State.books.isEditing = false;
+      State.books.editCoverFile = null;
+      State.books.editErrors = {};
 
       showToast(`"${form.title}" atualizado com sucesso!`, 'ok');
       this._renderBookDetail();
@@ -539,9 +539,9 @@ export const App = {
   },
 
   confirmDeleteBook() {
-    showConfirm(`Remover "${State.selectedBook?.name}"?\nEsta ação não pode ser desfeita.`, async () => {
+    showConfirm(`Remover "${State.books.selected?.name}"?\nEsta ação não pode ser desfeita.`, async () => {
       try {
-        await apiFetch(`${API_BASE}/products/produtos/${State.selectedBook.id}`, { method: 'DELETE' });
+        await apiFetch(`${API_BASE}/products/produtos/${State.books.selected.id}`, { method: 'DELETE' });
         showToast('Livro removido.', 'ok');
         State.reloadCallback?.();
         this.goList();
@@ -556,7 +556,7 @@ export const App = {
     document.getElementById('users-list').style.display = 'none';
     document.getElementById('users-empty').style.display = 'none';
     try {
-      State.allUsers = await apiFetch(`${API_BASE}/users/clientes`);
+      State.users.all = await apiFetch(`${API_BASE}/users/clientes`);
       this.renderUserList();
     } catch {
       // erro silencioso
@@ -584,13 +584,13 @@ export const App = {
   },
 
   renderUserList() {
-    const filtered = this._applyUserFilters(State.allUsers);
+    const filtered = this._applyUserFilters(State.users.all);
     const total = filtered.length;
-    const totalPages = Math.max(1, Math.ceil(total / State.usersPerPage));
-    if (State.usersPage > totalPages) State.usersPage = totalPages;
+    const totalPages = Math.max(1, Math.ceil(total / State.users.perPage));
+    if (State.users.page > totalPages) State.users.page = totalPages;
 
-    const start = (State.usersPage - 1) * State.usersPerPage;
-    const pageItems = filtered.slice(start, start + State.usersPerPage);
+    const start = (State.users.page - 1) * State.users.perPage;
+    const pageItems = filtered.slice(start, start + State.users.perPage);
 
     const listEl = document.getElementById('users-list');
     const emptyEl = document.getElementById('users-empty');
@@ -616,13 +616,13 @@ export const App = {
       <div class="user-row" style="animation-delay:${index * .03}s" onclick="App.openUser(${user.id})">
         <div class="user-avatar-sm">${user.name?.charAt(0).toUpperCase()}</div>
         <div style="min-width:0">
-          <page class="user-name">${escapeHtml(user.name)}</page>
-          <page class="user-email">${escapeHtml(user.email)}</page>
+          <span class="user-name">${escapeHtml(user.name)}</span>
+          <span class="user-email">${escapeHtml(user.email)}</span>
         </div>
         ${tagHtml(ROLE_LABELS[user.role] ?? user.role, user.role === 'admin' ? 'var(--orange)' : 'var(--blue)')}
       </div>`).join('');
 
-    paginationEl.innerHTML = buildPaginationHtml(State.usersPage, totalPages, 'App.goUsersPage');
+    paginationEl.innerHTML = buildPaginationHtml(State.users.page, totalPages, 'App.goUsersPage');
   },
 
   _hasActiveUserFilters() {
@@ -630,34 +630,34 @@ export const App = {
     return !!(f.search || f.role || f.status);
   },
 
-  onUserFilterChange() { State.usersPage = 1; this.renderUserList(); },
+  onUserFilterChange() { State.users.page = 1; this.renderUserList(); },
 
   goUsersPage(page) {
-    State.usersPage = page;
+    State.users.page = page;
     this.renderUserList();
     document.getElementById('users-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
 
-  updateUsersPerPage(value) { State.usersPerPage = Number(value); State.usersPage = 1; this.renderUserList(); },
+  updateUsersPerPage(value) { State.users.perPage = Number(value); State.users.page = 1; this.renderUserList(); },
 
   clearUserFilters() {
     ['users-search', 'users-role-filter', 'users-status-filter'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    State.usersPage = 1;
+    State.users.page = 1;
     this.renderUserList();
   },
 
   // DETALHES DO USUÁRIO
 
   openUser(userId) {
-    const user = State.allUsers.find(u => u.id === userId);
+    const user = State.users.all.find(u => u.id === userId);
     if (!user) return;
-    State.selectedUser = user;
+    State.users.selected = user;
     State.reloadCallback = () => this.loadUsers();
-    State.isEditingUser = false;
-    State.userEditErrors = {};
-    State.userEditForm = {
+    State.users.isEditing = false;
+    State.users.editErrors = {};
+    State.users.editForm = {
       name: user.name || '', email: user.email || '', phone: user.phone || '',
       role: user.role || 'client', street: user.street || '', number: '',
       neighborhood: '', city: user.city || '', state: '', zipCode: '',
@@ -667,9 +667,9 @@ export const App = {
   },
 
   _renderUserDetail() {
-    const user = State.selectedUser;
-    const f = State.userEditForm;
-    const e = State.userEditErrors;
+    const user = State.users.selected;
+    const f = State.users.editForm;
+    const e = State.users.editErrors;
     const el = document.getElementById('user-detail-content');
 
     el.innerHTML = `
@@ -678,7 +678,7 @@ export const App = {
       <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
         ${tagHtml(ROLE_LABELS[user.role] ?? user.role, user.role === 'admin' ? 'var(--orange)' : 'var(--blue)')}
       </div>
-      ${State.isEditingUser ? `
+      ${State.users.isEditing ? `
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:clamp(14px,3vw,20px)">
           ${buildField({ label: 'Nome', name: 'name', value: f.name, placeholder: 'João Silva', required: true, error: e.name, colSpan: 2 })}
           ${buildField({ label: 'E-mail', name: 'email', value: f.email, placeholder: 'joao@email.com', required: true, error: e.email, colSpan: 2, type: 'email' })}
@@ -699,7 +699,7 @@ export const App = {
         </div>
       `}
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        ${State.isEditingUser ? `
+        ${State.users.isEditing ? `
           <button class="btn-lib btn-primary-lib" id="user-save-btn" onclick="App.saveUser()">Salvar alterações</button>
           <button class="btn-lib btn-ghost-lib" onclick="App.cancelUserEdit()">Cancelar</button>
         ` : `
@@ -708,28 +708,28 @@ export const App = {
         `}
       </div>`;
 
-    if (State.isEditingUser) this._bindForm(el, State.userEditForm, State.userEditErrors);
+    if (State.users.isEditing) this._bindForm(el, State.users.editForm, State.users.editErrors);
   },
 
-  startUserEdit() { State.isEditingUser = true; this._renderUserDetail(); },
-  cancelUserEdit() { State.isEditingUser = false; this._renderUserDetail(); },
+  startUserEdit() { State.users.isEditing = true; this._renderUserDetail(); },
+  cancelUserEdit() { State.users.isEditing = false; this._renderUserDetail(); },
 
   async saveUser() {
-    const form = State.userEditForm;
+    const form = State.users.editForm;
     const errors = runValidation(['name', 'email', 'phone'], form);
-    if (Object.keys(errors).length) { State.userEditErrors = errors; this._renderUserDetail(); return; }
+    if (Object.keys(errors).length) { State.users.editErrors = errors; this._renderUserDetail(); return; }
 
     const btn = document.getElementById('user-save-btn');
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
 
     try {
-      await apiFetch(`${API_BASE}/users/clientes/${State.selectedUser.id}`, {
+      await apiFetch(`${API_BASE}/users/clientes/${State.users.selected.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: form.name.trim(), email: form.email.trim(), telefone: form.phone, role: form.role, rua: form.street, numero: form.number, bairro: form.neighborhood, cidade: form.city, estado: form.state, cep: form.zipCode }),
       });
-      State.selectedUser = { ...State.selectedUser, name: form.name.trim(), email: form.email.trim(), phone: form.phone, role: form.role, street: form.street, city: form.city };
-      State.isEditingUser = false;
-      State.userEditErrors = {};
+      State.users.selected = { ...State.users.selected, name: form.name.trim(), email: form.email.trim(), phone: form.phone, role: form.role, street: form.street, city: form.city };
+      State.users.isEditing = false;
+      State.users.editErrors = {};
       showToast(`"${form.name}" atualizado com sucesso!`, 'ok');
       this._renderUserDetail();
     } catch (err) {
@@ -739,9 +739,9 @@ export const App = {
   },
 
   confirmDeleteUser() {
-    showConfirm(`Remover "${State.selectedUser?.name}"?\nEsta ação não pode ser desfeita.`, async () => {
+    showConfirm(`Remover "${State.users.selected?.name}"?\nEsta ação não pode ser desfeita.`, async () => {
       try {
-        await apiFetch(`${API_BASE}/users/clientes/${State.selectedUser.id}`, { method: 'DELETE' });
+        await apiFetch(`${API_BASE}/users/clientes/${State.users.selected.id}`, { method: 'DELETE' });
         showToast('Usuário removido.', 'ok');
         State.reloadCallback?.();
         this.goList();
@@ -752,8 +752,8 @@ export const App = {
   // CADASTRO DE NOVO LIVRO
 
   _renderCreateBook() {
-    const f = State.newBookForm;
-    const e = State.newBookFormErrors;
+    const f = State.books.newForm;
+    const e = State.books.newFormErrors;
     document.getElementById('create-book-form').innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
         ${buildField({ label: 'Título', name: 'title', value: f.title, placeholder: 'Dom Casmurro', required: true, error: e.title, colSpan: 2 })}
@@ -771,20 +771,20 @@ export const App = {
           <label class="field-label">Capa</label>
           <label class="cover-upload-label" id="new-cover-lbl">
             <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="App.onCoverPick(this,'new')">
-            <span>${State.newBookCoverFile ? `✓ ${State.newBookCoverFile.name}` : '+ Selecionar imagem'}</span>
+            <span>${State.books.newCoverFile ? `✓ ${State.books.newCoverFile.name}` : '+ Selecionar imagem'}</span>
           </label>
         </div>
         <div style="grid-column:span 2">
           <button class="btn-lib btn-primary-lib full" id="create-book-btn" onclick="App.submitCreateBook()">Cadastrar livro</button>
         </div>
       </div>`;
-    this._bindForm(document.getElementById('create-book-form'), State.newBookForm, State.newBookFormErrors);
+    this._bindForm(document.getElementById('create-book-form'), State.books.newForm, State.books.newFormErrors);
   },
 
   async submitCreateBook() {
-    const form = State.newBookForm;
+    const form = State.books.newForm;
     const errors = runValidation(['title', 'price', 'stock', 'author'], form);
-    if (Object.keys(errors).length) { State.newBookFormErrors = errors; this._renderCreateBook(); return; }
+    if (Object.keys(errors).length) { State.books.newFormErrors = errors; this._renderCreateBook(); return; }
 
     const finalStatus = deriveStatus(form.stock, form.status);
     const btn = document.getElementById('create-book-btn');
@@ -796,7 +796,7 @@ export const App = {
         body: JSON.stringify({ ...mapBookFormToApi(form), status: finalStatus }),
       });
       const updatedList = await apiFetch(`${API_BASE}/products/produtos`);
-      State.allBooks = updatedList;
+      State.books.all = updatedList;
       const created = updatedList.find(b => b.name === form.title.trim());
 
       if (created) {
@@ -806,8 +806,8 @@ export const App = {
             body: JSON.stringify({ nome: form.author.trim(), productId: created.id }),
           });
         }
-        if (State.newBookCoverFile) {
-          const fd = new FormData(); fd.append('cover', State.newBookCoverFile);
+        if (State.books.newCoverFile) {
+          const fd = new FormData(); fd.append('cover', State.books.newCoverFile);
           await fetch(`${API_BASE}/products/produtos/${created.id}/cover`, { method: 'PUT', body: fd });
         }
       }
@@ -824,8 +824,8 @@ export const App = {
   // CADASTRO DE NOVO USUÁRIO
 
   _renderCreateUser() {
-    const f = State.newUserForm;
-    const e = State.newUserFormErrors;
+    const f = State.users.newForm;
+    const e = State.users.newFormErrors;
     document.getElementById('create-user-form').innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
         ${buildField({ label: 'Nome', name: 'name', value: f.name, placeholder: 'João Silva', required: true, error: e.name, colSpan: 2 })}
@@ -841,13 +841,13 @@ export const App = {
           <button class="btn-lib btn-primary-lib full" id="create-user-btn" onclick="App.submitCreateUser()">Cadastrar usuário</button>
         </div>
       </div>`;
-    this._bindForm(document.getElementById('create-user-form'), State.newUserForm, State.newUserFormErrors);
+    this._bindForm(document.getElementById('create-user-form'), State.users.newForm, State.users.newFormErrors);
   },
 
   async submitCreateUser() {
-    const form = State.newUserForm;
+    const form = State.users.newForm;
     const errors = runValidation(['name', 'email', 'password', 'phone', 'street', 'city', 'state', 'zipCode'], form);
-    if (Object.keys(errors).length) { State.newUserFormErrors = errors; this._renderCreateUser(); return; }
+    if (Object.keys(errors).length) { State.users.newFormErrors = errors; this._renderCreateUser(); return; }
 
     const btn = document.getElementById('create-user-btn');
     btn.disabled = true; btn.textContent = '…';

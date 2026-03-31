@@ -27,7 +27,6 @@ export const VALIDATORS = {
   email: (value) => {
     const text = value?.trim();
     if (!text) return 'E-mail é obrigatório';
-    // regex significa expressão regular, nesse caso, é usada pra validar emails (achei na internet)
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(text)) return 'E-mail inválido';
     return null;
@@ -42,7 +41,7 @@ export const VALIDATORS = {
 
   phone: (value) => {
     if (!value?.trim()) return null; // telefone é opcional
-    const digits = value.replace(/\D/g, ''); // remove oq nao é numero
+    const digits = value.replace(/\D/g, '');
     if (digits.length > 0 && digits.length < 10) return 'Mín. 10 dígitos';
     if (digits.length > 15) return 'Número muito longo';
     return null;

@@ -46,9 +46,9 @@ export function buildField({ label, name, type = 'text', value = '', placeholder
   return `
     <div style="${spanStyle}">
       <label class="field-label ${labelClass}">${label}${required ? '<span class="required-star"> *</span>' : ''}</label>
-      ${error ? `<page class="field-error">⚠ ${error}</page>` : ''}
+      ${error ? `<span class="field-error">⚠ ${error}</span>` : ''}
       ${inputHtml}
-      ${hint && !error ? `<page class="field-hint">${hint}</page>` : ''}
+      ${hint && !error ? `<span class="field-hint">${hint}</span>` : ''}
     </div>`;
 }
 

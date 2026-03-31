@@ -1,0 +1,38 @@
+/* lista de usuarios */
+.users-list { display: flex; flex-direction: column; gap: 4px; }
+.user-row {
+  display: grid; grid-template-columns: 36px 1fr auto auto;
+  align-items: center; gap: clamp(8px, 2vw, 18px);
+  padding: 12px clamp(10px, 2vw, 16px);
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 2px; cursor: pointer; transition: border-color .15s;
+  animation: fadeUp .3s ease both;
+  height: 70px;
+}
+.user-row:hover { border-color: var(--accent); }
+.user-avatar-sm {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 15px; color: var(--accent); flex-shrink: 0;
+  margin-top: -13px;
+}
+.user-name  { font-family: var(--serif); font-size: 16px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 1px; }
+.user-email { font-family: var(--mono); font-size: 11px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-row .tag { margin-top: -13px; }
+
+/* detalhe de usuario */
+.ud-avatar { width: 56px; height: 56px; border-radius: 50%; background: #111; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-size: 22px; color: var(--accent); margin-bottom: 16px; }
+.ud-title  { font-family: var(--serif); font-size: clamp(26px, 4vw, 36px); color: var(--text); margin-bottom: 8px; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: #1a1a1a; border: 1px solid #1a1a1a; border-radius: 3px; overflow: hidden; margin-bottom: 24px; }
+.info-cell { background: var(--bg2); padding: 13px 16px; }
+.info-cell-label { font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+.info-cell-val   { font-family: var(--mono); font-size: 13px; color: #ccc; word-break: break-all; }
+
+/* responsividade */
+@media (max-width: 600px) {
+  .user-row { grid-template-columns: 36px 1fr auto; }
+}
+@media (max-width: 420px) {
+  .user-row .tag:last-child { display: none; }
+}
