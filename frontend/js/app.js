@@ -6,6 +6,7 @@ import { formatPrice, deriveStatus, escapeHtml } from './helpers.js';
 import { tagHtml, coverHtml, buildField, addressFieldsHtml, buildPaginationHtml } from './ui.js';
 import { apiFetch, mapBookFormToApi } from './api.js';
 import { State, VIEW_MODE, ACTIVE_TAB, showToast, showConfirm, confirmYes, confirmNo } from './state.js';
+import { currentTheme, toggleTheme } from './theme.js';
 
 export const App = {
 
@@ -163,6 +164,7 @@ export const App = {
           <button class="chip-dd-btn switch" onclick="App.toggleViewMode()">
             ${inAdmin ? '👁 Ver como cliente' : '⚙ Painel admin'}
           </button>` : ''}
+        <button class="chip-dd-btn theme" data-theme-toggle onclick="toggleTheme()">${currentTheme() === 'dark' ? '☀ Tema claro' : '🌙 Tema escuro'}</button>
         <button class="chip-dd-btn logout" onclick="App.logout()">Sair</button>
       </div>`;
 

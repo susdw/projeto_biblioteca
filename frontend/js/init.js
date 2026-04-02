@@ -1,9 +1,14 @@
 // Ponto de entrada: eventos globais e inicialização
 
 import { App } from './app.js';
+import { initTheme, toggleTheme } from './theme.js';
 
 // expõe App globalmente (necessário para os handlers onclick inline no HTML)
 window.App = App;
+window.toggleTheme = toggleTheme;
+
+// aplica o tema salvo antes de qualquer renderização
+initTheme();
 
 // fecha o dropdown do chip se o usuário clicar fora
 document.addEventListener('click', event => {
