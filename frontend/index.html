@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Biblioteca Digital</title>
+  <title>Margem — Biblioteca Digital</title>
   <link rel="icon" href="assets/img/icon.png" type="image/png">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inconsolata:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/login.css" />
   <link rel="stylesheet" href="css/books.css" />
@@ -16,10 +16,33 @@
 
 <!-- tela de login -->
 <div id="login-page">
+
+  <!-- botão de tema flutuante -->
+  <button class="theme-toggle-btn" onclick="App.toggleTheme()">☀ tema</button>
+
   <div class="login-wrap">
     <div class="text-center mb-4">
+
+      <!-- logo MARGEM -->
+      <div style="display:inline-flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;">
+        <svg width="52" height="60" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Margem logo">
+          <rect x="1" y="1" width="50" height="56" rx="4" fill="var(--bg2)" stroke="var(--border)" stroke-width="1"/>
+          <rect x="1" y="1" width="7" height="56" rx="3" fill="var(--accent)" opacity="0.85"/>
+          <rect x="1" y="1" width="7" height="56" rx="0" fill="var(--accent)" x2="8"/>
+          <!-- lombada -->
+          <rect x="1" y="1" width="7.5" height="56" rx="3" fill="var(--accent)"/>
+          <!-- linhas de texto -->
+          <rect x="15" y="16" width="28" height="1.5" rx="1" fill="var(--border2)"/>
+          <rect x="15" y="22" width="23" height="1.5" rx="1" fill="var(--border2)"/>
+          <rect x="15" y="28" width="26" height="1.5" rx="1" fill="var(--border2)"/>
+          <rect x="15" y="34" width="20" height="1.5" rx="1" fill="var(--border2)"/>
+          <!-- sublinhado — a "margem" do leitor -->
+          <rect x="15" y="44" width="16" height="1.5" rx="1" fill="var(--accent)" opacity="0.7"/>
+        </svg>
+      </div>
+
       <div class="login-eyebrow">Biblioteca Digital</div>
-      <h1 class="login-title" id="login-heading">Bem-vindo</h1>
+      <h1 class="login-title" id="login-heading">Margem</h1>
     </div>
     <div id="server-msg" style="display:none"></div>
     <div class="login-box" id="login-box"></div>
@@ -27,17 +50,32 @@
   </div>
 </div>
 
-<!-- arquitetura do app (ou shell em ingles) -->
+<!-- arquitetura do app -->
 <div id="app-shell" style="display:none">
 <header id="app-header">
-  <div style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">
-    <span class="brand">Biblioteca</span>
-    <span class="brand-badge" id="admin-badge" style="display:none">admin</span>
+
+  <!-- marca com logo inline -->
+  <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <svg width="22" height="26" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="1" width="50" height="56" rx="4" fill="var(--bg2)" stroke="var(--border)" stroke-width="1.5"/>
+      <rect x="1" y="1" width="7.5" height="56" rx="3" fill="var(--accent)"/>
+      <rect x="15" y="16" width="28" height="1.5" rx="1" fill="var(--border2)"/>
+      <rect x="15" y="22" width="23" height="1.5" rx="1" fill="var(--border2)"/>
+      <rect x="15" y="28" width="26" height="1.5" rx="1" fill="var(--border2)"/>
+      <rect x="15" y="34" width="20" height="1.5" rx="1" fill="var(--border2)"/>
+      <rect x="15" y="44" width="16" height="1.5" rx="1" fill="var(--accent)" opacity="0.7"/>
+    </svg>
+    <div>
+      <span class="brand">Margem</span>
+      <span class="brand-badge" id="admin-badge" style="display:none">admin</span>
+    </div>
   </div>
+
   <nav class="nav-tabs-custom" id="main-nav" style="display:none">
     <button class="nav-tab active" data-tab="livros">Livros</button>
     <button class="nav-tab"        data-tab="usuarios">Usuários</button>
   </nav>
+
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
     <button class="hamburger-btn" id="hamburger-btn" style="display:none" onclick="App.toggleHamburger()">
       <span></span><span></span><span></span>
@@ -126,7 +164,6 @@
             <option value="client">Cliente</option>
             <option value="admin">Administrador</option>
           </select>
-          </select>
           <select class="filter-select" id="users-per-page" onchange="App.updateUsersPerPage(this.value)">
             <option value="10" selected>10 / pág.</option>
             <option value="25">25 / pág.</option>
@@ -174,7 +211,7 @@
   </main>
 </div>
 
-<!-- notificação (toast em ingles) -->
+<!-- notificação -->
 <div id="toast"></div>
 
 <!-- confirmação -->
