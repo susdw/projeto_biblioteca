@@ -38,3 +38,37 @@
 @media (max-width: 420px) {
   .user-row .tag:last-child { display: none; }
 }
+/* 1. Estilização do Botão (como ele deve parecer) */
+.hamburger-btn {
+    display: none; /* Começa escondido no computador */
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* 2. Criando os 3 risquinhos */
+.hamburger-btn span {
+    width: 100%;
+    height: 2px;
+    background-color: var(--text); /* Cor do seu tema creme pastel */
+    border-radius: 2px;
+    transition: 0.3s;
+}
+
+/* 3. Lógica de Visibilidade (Responsivo) */
+@media (max-width: 768px) {
+    .hamburger-btn {
+        display: flex; /* Aparece apenas em telas menores que 768px */
+    }
+
+    /* Opcional: Se quiser que o user-chip fique menor no celular */
+    .user-chip {
+        scale: 0.9;
+    }
+}
+

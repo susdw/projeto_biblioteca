@@ -12,7 +12,7 @@
 }
 .book-card:hover        { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 8px 24px rgba(200,85,42,.12); }
 .book-card-img          { background: var(--bg2); display: flex; justify-content: center; padding: 14px 14px 0; }
-.book-card-body         { padding: 12px 14px 16px; }
+.book-card-body         { padding: 12px 14px 16px; display: flex; flex-direction: column; }
 .book-card-title        { font-family: var(--serif); font-size: 15px; font-style: italic; color: var(--text); margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
 .book-card-price        { font-family: var(--mono); font-size: 13px; margin-bottom: 7px; font-weight: 500; }
 .book-card-genre        { margin-bottom: 7px; }

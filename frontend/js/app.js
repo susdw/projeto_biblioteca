@@ -343,8 +343,8 @@ export const App = {
           <span class="book-card-title" title="${escapeHtml(book.name)}">${escapeHtml(book.name)}</span>
           <span class="book-card-price" style="color:${Number(book.price) === 0 ? 'var(--blue)' : 'var(--accent)'}">${formatPrice(book.price)}</span>
           <div class="book-card-footer">
-            <span class="book-card-stock">${book.stock} unidade${book.stock > 1 || book.stock < 1 ? "s" : ""}</span>
-            ${tagHtml(STATUS_LABELS[book.status] ?? book.status, STATUS_COLORS[book.status] ?? '#888')}
+            <span class="book-card-stock">Estoque: ${book.stock} ${book.stock > 1 || book.stock < 1 ? "disponíveis" : "disponível"}</span>
+            
           </div>
         </div>
       </div>`).join('');
@@ -456,10 +456,6 @@ export const App = {
               <div class="detail-stat-label">Estoque</div>
               <div class="detail-stat-val" style="color:${book.stock > 0 ? 'var(--text)' : 'var(--red)'}">${book.stock} un.</div>
             </div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-            ${tagHtml(STATUS_LABELS[book.status] ?? book.status, STATUS_COLORS[book.status] ?? '#888')}
-            ${book.category_name ? tagHtml(book.category_name, 'var(--blue)') : ''}
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             ${inAdmin ? `

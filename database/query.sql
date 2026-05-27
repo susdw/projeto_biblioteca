@@ -128,4 +128,4 @@ LEFT JOIN product_authors pa ON p.id = pa.product_id
 LEFT JOIN authors a ON pa.author_id = a.id
 GROUP BY p.id;
 
-UPDATE customers SET role = 'client' WHERE email = 'izacfranca23@gmail.com'
+UPDATE customers SET role = 'admin' WHERE email = 'lucas.maciel0410@outlook.com'

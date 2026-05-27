@@ -1,6 +1,6 @@
 const THEME_KEY = 'biblioteca_tema';
 // Defining the rotation: dark -> creme -> invertido -> dark
-const THEME_CYCLE = ['dark', 'creme', 'invertido'];
+const THEME_CYCLE = ['dark', 'creme'];
 
 export function applyTheme(theme) {
   const html = document.documentElement;
@@ -46,7 +46,6 @@ function _updateToggleButtons(theme) {
   const labels = {
     'dark': '🌙 Escuro',
     'creme': '🍦 Creme',
-    'invertido': '🧱 Terracota'
   };
   
   document.querySelectorAll('[data-theme-toggle]').forEach(btn => {

@@ -39,23 +39,6 @@
   --red-dk:    #7a1a1a;
 }
 
-/* tema invertido — terracota como base */
-[data-theme="invertido"] {
-  --bg:        #c8552a;
-  --bg2:       #b84820;
-  --bg3:       #a83c18;
-  --border:    #d86840;
-  --border2:   #e07850;
-  --text:      #fdf4ec;
-  --muted:     #f0d0b8;
-  --dim:       #d8a888;
-  --accent:    #fdf4ec;
-  --accent-dk: #e8d0b0;
-  --blue:      #a8dfc0;
-  --orange:    #f8e080;
-  --red:       #4a0a0a;
-  --red-dk:    #2c0000;
-}
 
 /* transição suave ao trocar de tema */
 .theme-transitioning,

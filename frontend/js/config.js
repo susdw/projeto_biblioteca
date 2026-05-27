@@ -5,7 +5,7 @@ export const IMG_BASE = "http://localhost:3000";
 export const SESSION_KEY = "biblioteca_usuario";
 
 export const STATUS_COLORS = {
-  active: '#b8ff57',
+  active: '#37FF00',
   inactive: '#ff6b6b',
   out_of_stock: '#ffaa00',
 };
